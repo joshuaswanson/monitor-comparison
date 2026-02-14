@@ -538,9 +538,6 @@ function rerender() {
     }
   });
 
-  // Disable CSS transitions on dots/labels/badges during JS animation
-  chartArea.classList.add('animating');
-
   const startX = { min: xRange.min, max: xRange.max };
   const startY = { min: yRange.min, max: yRange.max };
   const startTime = performance.now();
@@ -572,7 +569,6 @@ function rerender() {
       animationId = requestAnimationFrame(tick);
     } else {
       animationId = null;
-      chartArea.classList.remove('animating');
     }
   }
 
