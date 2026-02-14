@@ -97,10 +97,10 @@ function fanOffsets(n) {
 function positionDots() {
   // Collect singleton label positions for collision avoidance
   const singletonLabels = [];
-  // Collect badge positions from non-expanded clusters for label collision checks
-  const badgePositions = [];
-  // Collect expanded labels to check against badges
-  const expandedLabels = [];
+  // Collect expanded dot positions to check against non-expanded badges
+  const expandedDotPositions = [];
+  // Track non-expanded badges for hiding when near expanded clusters
+  const nonExpandedBadges = [];
 
   Object.entries(groups).forEach(([key, group]) => {
     const indices = group.indices;
@@ -137,9 +137,9 @@ function positionDots() {
 
         const dx = offsets[j].dx, dy = offsets[j].dy;
         let lx = x + dx * 1.1, ly = y + dy * 1.1;
-        let alignRight = false;
+        labelEls[mi].style.transform = '';
         if (dx < -3) {
-          alignRight = true;
+          labelEls[mi].style.transform = 'translateX(-100%)';
           lx -= 4;
         } else {
           lx += 8;
@@ -147,9 +147,13 @@ function positionDots() {
         if (dy > 3) ly += 8;
         else if (dy < -3) ly -= 14;
         else ly -= 4;
+        labelEls[mi].style.left = lx + 'px';
+        labelEls[mi].style.top = ly + 'px';
 
-        expandedLabels.push({ idx: mi, lx, ly, alignRight, dotX: x, dotY: y, dx, dy });
+        expandedDotPositions.push({ x, y });
       });
+      // Also include the centroid itself
+      expandedDotPositions.push({ x: cx, y: cy });
       // Hidden dots in this group still go to centroid
       indices.filter(mi => !visibleMonitors.has(mi)).forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
@@ -161,7 +165,6 @@ function positionDots() {
         badgeEls[key].style.opacity = '0.4';
       }
     } else {
-      const visCount = indices.filter(mi => visibleMonitors.has(mi)).length;
       indices.forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
@@ -172,37 +175,24 @@ function positionDots() {
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
         badgeEls[key].style.top = cy + 'px';
-        badgeEls[key].style.opacity = '1';
-        if (visCount > 1) {
-          badgePositions.push({ x: cx, y: cy, hw: 16, hh: 10 });
-        }
+        nonExpandedBadges.push({ el: badgeEls[key], x: cx, y: cy, key });
       }
     }
   });
 
-  // Nudge expanded labels away from nearby badges
-  expandedLabels.forEach(lbl => {
-    const labelW = 70, labelH = 12;
-    for (const bp of badgePositions) {
-      // Check if label rect overlaps badge rect
-      const lLeft = lbl.alignRight ? lbl.lx - labelW : lbl.lx;
-      const lRight = lbl.alignRight ? lbl.lx : lbl.lx + labelW;
-      const lTop = lbl.ly - 2;
-      const lBottom = lbl.ly + labelH;
-      const bLeft = bp.x - bp.hw;
-      const bRight = bp.x + bp.hw;
-      const bTop = bp.y - bp.hh;
-      const bBottom = bp.y + bp.hh;
-
-      if (lRight > bLeft && lLeft < bRight && lBottom > bTop && lTop < bBottom) {
-        // Push label further out along the fan direction
-        lbl.lx += lbl.dx * 0.8;
-        lbl.ly += lbl.dy * 0.8;
+  // Hide non-expanded badges that are too close to any expanded dot
+  const hideThreshold = 35;
+  nonExpandedBadges.forEach(({ el, x, y }) => {
+    let tooClose = false;
+    for (const ep of expandedDotPositions) {
+      const dx = x - ep.x, dy = y - ep.y;
+      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) {
+        tooClose = true;
+        break;
       }
     }
-    labelEls[lbl.idx].style.transform = lbl.alignRight ? 'translateX(-100%)' : '';
-    labelEls[lbl.idx].style.left = lbl.lx + 'px';
-    labelEls[lbl.idx].style.top = lbl.ly + 'px';
+    el.style.opacity = tooClose ? '0' : '1';
+    el.style.pointerEvents = tooClose ? 'none' : '';
   });
 
   // Collision avoidance for singleton labels: nudge overlapping labels vertically
