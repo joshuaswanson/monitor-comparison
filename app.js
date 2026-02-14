@@ -958,7 +958,7 @@ function buildRatioPanel() {
   list.className = 'ref-list';
 
   const items = document.createElement('div');
-  items.className = 'ref-list-items';
+  items.className = 'ref-list-items narrow';
 
   ratioLines.forEach((rl, i) => {
     const label = document.createElement('label');
