@@ -460,34 +460,17 @@ h1 + .axis-controls {
   text-align: center;
 }
 
-.filter-panel-sidebar {
-  text-align: left;
-}
-
-.filter-panel-sidebar .filter-list {
-  margin: 0;
-  background: #161822;
-  border: 1px solid #2a2c3a;
-  border-radius: 10px;
-  padding: 16px 14px;
-}
-
-.filter-sidebar-heading {
-  font-size: 0.75rem;
+.filter-group-heading {
+  font-size: 0.65rem;
   font-weight: 600;
-  color: #9a9aae;
+  color: #6a6a7e;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  margin: 10px 0 4px;
 }
 
-#filterPanel {
-  margin-left: 20px;
-  margin-right: 20px;
-  min-width: 180px;
-  max-width: 220px;
-  align-self: flex-start;
-  padding-top: 30px;
+.filter-group-heading:first-child {
+  margin-top: 0;
 }
 
 .ref-list {
