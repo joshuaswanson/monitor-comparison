@@ -412,8 +412,10 @@ function createRatioLines() {
 }
 
 function updateRatioLines() {
-  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
-  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+  const whAxes = new Set(['w', 'h']);
+  const whInAxes = new Set(['wIn', 'hIn']);
+  const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
+  const isWInHIn = whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
   const xIsAr = xAxisKey === 'ar';
   const yIsAr = yAxisKey === 'ar';
 
@@ -431,19 +433,18 @@ function updateRatioLines() {
     label.style.display = '';
 
     if (isWH || isWInHIn) {
-      // Diagonal clipping math (works for both pixel and inch axes since ratio = x/y)
-      const wAtHmin = data.r * yRange.min;
-      const wAtHmax = data.r * yRange.max;
+      // Slope depends on which axis is width vs height
+      // r = w/h, so: x=w,y=h -> y = x/r (slope=1/r); x=h,y=w -> y = x*r (slope=r)
+      const xIsWidth = xAxisKey === 'w' || xAxisKey === 'wIn';
+      const slope = xIsWidth ? 1 / data.r : data.r;
 
-      let x1d = Math.max(xRange.min, wAtHmin);
-      let y1d = x1d / data.r;
-      let x2d = Math.min(xRange.max, wAtHmax);
-      let y2d = x2d / data.r;
+      let x1d = xRange.min, y1d = slope * x1d;
+      let x2d = xRange.max, y2d = slope * x2d;
 
-      if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d * data.r; }
-      if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d * data.r; }
-      if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d * data.r; }
-      if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d * data.r; }
+      if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d / slope; }
+      if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d / slope; }
+      if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d / slope; }
+      if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d / slope; }
 
       const sx1 = xPos(x1d), sy1 = yPos(y1d);
       const sx2 = xPos(x2d), sy2 = yPos(y2d);
@@ -562,7 +563,8 @@ function drawHyperbola(k, path, label) {
 }
 
 function updateMpCurves() {
-  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const whAxes = new Set(['w', 'h']);
+  const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
 
   mpCurveEls.forEach(({ path, label, data }, i) => {
     if (!mpEnabled.has(i) || !isWH) {
@@ -596,7 +598,8 @@ function createAreaCurves() {
 }
 
 function updateAreaCurves() {
-  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+  const whInAxes = new Set(['wIn', 'hIn']);
+  const isWInHIn = whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
 
   areaCurveEls.forEach(({ path, label, data }, i) => {
     if (!areaEnabled.has(i) || !isWInHIn) {
@@ -1683,8 +1686,10 @@ function switchAxes(newX, newY) {
 }
 
 function updateNoteBar() {
-  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
-  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+  const whAxes = new Set(['w', 'h']);
+  const whInAxes = new Set(['wIn', 'hIn']);
+  const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
+  const isWInHIn = whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
   const isAreaMp = (xAxisKey === 'area' && yAxisKey === 'mp') ||
                    (xAxisKey === 'mp' && yAxisKey === 'area');
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
@@ -1822,8 +1827,10 @@ function measureLabelMargin() {
 }
 
 function updateLabelMargin() {
-  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
-  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+  const whAxes = new Set(['w', 'h']);
+  const whInAxes = new Set(['wIn', 'hIn']);
+  const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
+  const isWInHIn = whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
   const hasRatio = ratioEnabled.size > 0;
   const hasMp = mpEnabled.size > 0;
