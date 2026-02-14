@@ -21,8 +21,13 @@ const ttName = document.getElementById('ttName');
 const ttDetail = document.getElementById('ttDetail');
 const legendContainer = document.getElementById('legend');
 
-// Background layer for grid, ratio lines, MP curves (rebuilt on rescale)
-let bgLayer = null;
+// Persistent SVG elements for reference lines
+const ratioLineEls = [];   // { line, label }
+const mpCurveEls = [];     // { path }
+let refSvg = null;
+let gridLayer = null;
+
+const CURVE_SAMPLES = 200;
 
 function xPos(v) { return (v - xRange.min) / (xRange.max - xRange.min) * W; }
 function yPos(v) { return H - (v - yRange.min) / (yRange.max - yRange.min) * H; }
@@ -45,15 +50,19 @@ function niceTicks(min, max, count) {
   return ticks;
 }
 
-function computeLayout() {
-  xRange = niceRange(monitors.map(m => m.w), 0.15);
-  yRange = niceRange(monitors.map(m => m.h), 0.15);
+function measureChart() {
   const rect = chartArea.getBoundingClientRect();
   W = rect.width;
   H = rect.height;
   const chartRect = chartContainer.getBoundingClientRect();
   areaOffsetLeft = rect.left - chartRect.left;
   areaOffsetTop = rect.top - chartRect.top;
+}
+
+function computeLayout() {
+  xRange = niceRange(monitors.map(m => m.w), 0.15);
+  yRange = niceRange(monitors.map(m => m.h), 0.15);
+  measureChart();
 }
 
 function fanOffsets(n) {
@@ -160,21 +169,22 @@ function buildLegend() {
   });
 }
 
-function ensureBgLayer() {
-  if (bgLayer) bgLayer.remove();
-  bgLayer = document.createElement('div');
-  bgLayer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;';
-  chartArea.insertBefore(bgLayer, chartArea.firstChild);
-}
-
 function drawGrid() {
+  if (gridLayer) gridLayer.remove();
+  gridLayer = document.createElement('div');
+  gridLayer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;';
+  chartArea.insertBefore(gridLayer, chartArea.firstChild);
+
+  yLabelsCol.innerHTML = '';
+  chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
+
   niceTicks(yRange.min, yRange.max, 7).forEach(v => {
     const y = yPos(v);
     if (y < -5 || y > H + 5) return;
     const line = document.createElement('div');
     line.className = 'grid-line-h';
     line.style.top = y + 'px';
-    bgLayer.appendChild(line);
+    gridLayer.appendChild(line);
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-y';
     lbl.style.top = (areaOffsetTop + y) + 'px';
@@ -188,7 +198,7 @@ function drawGrid() {
     const line = document.createElement('div');
     line.className = 'grid-line-v';
     line.style.left = x + 'px';
-    bgLayer.appendChild(line);
+    gridLayer.appendChild(line);
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-x';
     lbl.style.left = (areaOffsetLeft + x) + 'px';
@@ -197,70 +207,106 @@ function drawGrid() {
   });
 }
 
-function drawMpCurves() {
-  mpCurves.forEach(curve => {
-    const k = curve.w * curve.h;
-    const pts = [];
-    for (let px = 500; px <= 12000; px += 20) {
-      const py = k / px;
-      const sx = xPos(px), sy = yPos(py);
-      if (sx >= -10 && sx <= W + 10 && sy >= -10 && sy <= H + 10) pts.push({ sx, sy });
-    }
-    if (pts.length < 2) return;
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible;';
-    svg.style.width = W + 'px';
-    svg.style.height = H + 'px';
-    let d = 'M ' + pts[0].sx + ' ' + pts[0].sy;
-    for (let i = 1; i < pts.length; i++) d += ' L ' + pts[i].sx + ' ' + pts[i].sy;
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    path.setAttribute('stroke', curve.color);
-    path.setAttribute('stroke-opacity', '0.2');
-    path.setAttribute('stroke-width', '1.2');
-    path.setAttribute('stroke-dasharray', '3 3');
-    path.setAttribute('fill', 'none');
-    svg.appendChild(path);
-    bgLayer.appendChild(svg);
-  });
+function createRefSvg() {
+  refSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  refSvg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;';
+  chartArea.appendChild(refSvg);
 }
 
-function drawRatioLines() {
+function createRatioLines() {
   ratioLines.forEach(rl => {
-    const pts = [];
-    for (let pw = 0; pw <= 12000; pw += 50) {
-      const ph = pw / rl.r;
-      const sx = xPos(pw), sy = yPos(ph);
-      if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) pts.push({ sx, sy });
-    }
-    if (pts.length < 2) return;
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible;';
-    svg.style.width = W + 'px';
-    svg.style.height = H + 'px';
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', pts[0].sx);
-    line.setAttribute('y1', pts[0].sy);
-    line.setAttribute('x2', pts[pts.length - 1].sx);
-    line.setAttribute('y2', pts[pts.length - 1].sy);
     line.setAttribute('stroke', rl.color);
     line.setAttribute('stroke-opacity', '0.25');
     line.setAttribute('stroke-width', '1.5');
     line.setAttribute('stroke-dasharray', '6 4');
-    svg.appendChild(line);
-    bgLayer.appendChild(svg);
+    line.style.transition = 'x1 0.35s ease, y1 0.35s ease, x2 0.35s ease, y2 0.35s ease';
+    refSvg.appendChild(line);
 
-    const li = Math.min(pts.length - 1, Math.floor(pts.length * 0.88));
     const lbl = document.createElement('div');
     lbl.className = 'ratio-label';
     lbl.style.color = rl.color;
     lbl.style.opacity = '0.5';
     lbl.textContent = rl.name;
-    lbl.style.left = (pts[li].sx + 8) + 'px';
-    lbl.style.top = (pts[li].sy - 16) + 'px';
-    bgLayer.appendChild(lbl);
+    lbl.style.transition = 'left 0.35s ease, top 0.35s ease';
+    chartArea.appendChild(lbl);
+
+    ratioLineEls.push({ line, label: lbl, data: rl });
+  });
+}
+
+function updateRatioLines() {
+  ratioLineEls.forEach(({ line, label, data }) => {
+    // Compute clipped endpoints in data space
+    // Line: y = x / r  (in data coords, h = w / r)
+    // Find where it enters and exits the visible range
+    const wAtHmin = data.r * yRange.min;
+    const wAtHmax = data.r * yRange.max;
+    const hAtWmin = xRange.min / data.r;
+    const hAtWmax = xRange.max / data.r;
+
+    let x1d = Math.max(xRange.min, wAtHmin);
+    let y1d = x1d / data.r;
+    let x2d = Math.min(xRange.max, wAtHmax);
+    let y2d = x2d / data.r;
+
+    // Clamp to chart bounds
+    if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d * data.r; }
+    if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d * data.r; }
+    if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d * data.r; }
+    if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d * data.r; }
+
+    const sx1 = xPos(x1d), sy1 = yPos(y1d);
+    const sx2 = xPos(x2d), sy2 = yPos(y2d);
+
+    line.style.x1 = sx1 + 'px';
+    line.style.y1 = sy1 + 'px';
+    line.style.x2 = sx2 + 'px';
+    line.style.y2 = sy2 + 'px';
+
+    // Position label near the upper end of the line
+    const t = 0.88;
+    const lx = sx1 + (sx2 - sx1) * t;
+    const ly = sy1 + (sy2 - sy1) * t;
+    label.style.left = (lx + 8) + 'px';
+    label.style.top = (ly - 16) + 'px';
+  });
+}
+
+function createMpCurves() {
+  mpCurves.forEach(curve => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', curve.color);
+    path.setAttribute('stroke-opacity', '0.2');
+    path.setAttribute('stroke-width', '1.2');
+    path.setAttribute('stroke-dasharray', '3 3');
+    path.setAttribute('fill', 'none');
+    path.style.transition = 'd 0.35s ease';
+    refSvg.appendChild(path);
+
+    mpCurveEls.push({ path, data: curve });
+  });
+}
+
+function updateMpCurves() {
+  mpCurveEls.forEach(({ path, data }) => {
+    const k = data.w * data.h;
+    // Use fixed number of samples across the full x range
+    const pts = [];
+    for (let i = 0; i <= CURVE_SAMPLES; i++) {
+      const t = i / CURVE_SAMPLES;
+      const px = xRange.min + t * (xRange.max - xRange.min);
+      const py = k / px;
+      const sx = xPos(px);
+      const sy = yPos(py);
+      // Clamp to chart bounds
+      pts.push({ sx: Math.max(0, Math.min(W, sx)), sy: Math.max(0, Math.min(H, sy)) });
+    }
+    let d = 'M ' + pts[0].sx.toFixed(1) + ' ' + pts[0].sy.toFixed(1);
+    for (let i = 1; i < pts.length; i++) {
+      d += ' L ' + pts[i].sx.toFixed(1) + ' ' + pts[i].sy.toFixed(1);
+    }
+    path.setAttribute('d', d);
   });
 }
 
@@ -349,7 +395,6 @@ function buildMonitorPanel() {
     const cat = categories[catKey];
 
     if (indices.length === 1) {
-      // Single-monitor category: show as a standalone checkbox
       const i = indices[0];
       const label = document.createElement('label');
       label.className = 'monitor-list-category-title';
@@ -468,20 +513,14 @@ function rerender() {
     yRange = niceRange(visMonitors.map(m => m.h), 0.15);
   }
 
-  const rect = chartArea.getBoundingClientRect();
-  W = rect.width;
-  H = rect.height;
-  const chartRect = chartContainer.getBoundingClientRect();
-  areaOffsetLeft = rect.left - chartRect.left;
-  areaOffsetTop = rect.top - chartRect.top;
+  measureChart();
 
-  // Rebuild background layer (grid, ratio lines, MP curves)
-  yLabelsCol.innerHTML = '';
-  chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
-  ensureBgLayer();
+  // Rebuild grid (snaps instantly -- that's fine)
   drawGrid();
-  drawMpCurves();
-  drawRatioLines();
+
+  // Update persistent reference lines (CSS transitions animate them)
+  updateRatioLines();
+  updateMpCurves();
 
   // Reposition existing dots and clusters (CSS transitions animate them)
   positionDots();
@@ -512,10 +551,12 @@ function rerender() {
 
 function render() {
   computeLayout();
-  ensureBgLayer();
   drawGrid();
-  drawMpCurves();
-  drawRatioLines();
+  createRefSvg();
+  createRatioLines();
+  createMpCurves();
+  updateRatioLines();
+  updateMpCurves();
   createDots();
   createClusters();
   positionDots();
