@@ -16,11 +16,16 @@
     { "name": "Samsung Odyssey Neo G9 57\"", "w": 7680, "h": 2160, "diag": 57, "cat": "super-ultra", "shortName": "Neo G9 57\"" },
     { "name": "Samsung Odyssey OLED G9 49\"", "w": 5120, "h": 1440, "diag": 49, "cat": "super-ultra", "shortName": "Odyssey G9 49\"" },
     { "name": "MSI MPG 491CQP 49\" QD-OLED", "w": 5120, "h": 1440, "diag": 49, "cat": "super-ultra", "shortName": "MSI 49\"" },
-    { "name": "Lenovo P49w-30 49\"", "w": 5120, "h": 1440, "diag": 49, "cat": "super-ultra", "shortName": "Lenovo 49\"" }
+    { "name": "Lenovo P49w-30 49\"", "w": 5120, "h": 1440, "diag": 49, "cat": "super-ultra", "shortName": "Lenovo 49\"" },
+    { "name": "Dell UltraSharp U5226KW 52\"", "w": 6144, "h": 2560, "diag": 52, "cat": "ultrawide-6k", "shortName": "Dell 52\" 6K" },
+    { "name": "Samsung CJ890 43\"", "w": 3840, "h": 1200, "diag": 43.3, "cat": "super-ultra", "shortName": "Samsung CJ890" },
+    { "name": "INNOCN 44C1G 44\"", "w": 3840, "h": 1080, "diag": 43.8, "cat": "super-ultra", "shortName": "INNOCN 44C1G" },
+    { "name": "LG 34WQ650-W 34\"", "w": 2560, "h": 1080, "diag": 34, "cat": "ultrawide-entry", "shortName": "LG 34\" 1080p" }
   ],
   "ratioLines": [
     { "name": "16:9", "r": 1.7778, "color": "#8888aa" },
     { "name": "21:9", "r": 2.3333, "color": "#34d399" },
+    { "name": "32:10", "r": 3.2, "color": "#2dd4bf" },
     { "name": "32:9", "r": 3.5556, "color": "#fb923c" }
   ],
   "mpCurves": [
@@ -29,12 +34,14 @@
     { "name": "~20.4 MP", "w": 6016, "h": 3384, "color": "#a78bfa" }
   ],
   "categories": {
-    "macbook":        { "label": "MacBook ref",               "color": "#f5a623" },
-    "apple-ext":      { "label": "Apple external",            "color": "#a78bfa" },
-    "8k":             { "label": "8K class",                  "color": "#e879f9" },
-    "ultrawide-high": { "label": "Ultrawide 5K2K",            "color": "#34d399" },
-    "ultrawide-mid":  { "label": "Ultrawide 3840x1600",       "color": "#60a5fa" },
-    "ultrawide-low":  { "label": "Ultrawide 3440x1440",       "color": "#f87171" },
-    "super-ultra":    { "label": "Super ultrawide 32:9",      "color": "#fb923c" }
+    "macbook":         { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
+    "apple-ext":       { "label": "Apple external",            "color": "#a78bfa" },
+    "8k":              { "label": "8K class",                  "color": "#e879f9" },
+    "ultrawide-high":  { "label": "Ultrawide 5K2K",            "color": "#34d399" },
+    "ultrawide-mid":   { "label": "Ultrawide 3840x1600",       "color": "#60a5fa" },
+    "ultrawide-low":   { "label": "Ultrawide 3440x1440",       "color": "#f87171" },
+    "super-ultra":     { "label": "Super ultrawide 32:9",      "color": "#fb923c" },
+    "ultrawide-6k":    { "label": "Ultrawide 6K",              "color": "#2dd4bf" },
+    "ultrawide-entry": { "label": "Ultrawide 2560x1080",       "color": "#fbbf24" }
   }
 }
