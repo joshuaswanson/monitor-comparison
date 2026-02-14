@@ -347,6 +347,35 @@ function buildMonitorPanel() {
 
   Object.entries(grouped).forEach(([catKey, indices]) => {
     const cat = categories[catKey];
+
+    if (indices.length === 1) {
+      // Single-monitor category: show as a standalone checkbox
+      const i = indices[0];
+      const label = document.createElement('label');
+      label.className = 'monitor-list-category-title';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = true;
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          visibleMonitors.add(i);
+        } else {
+          visibleMonitors.delete(i);
+        }
+        updateVisibility();
+      });
+      label.appendChild(cb);
+      const catDot = document.createElement('div');
+      catDot.className = 'cat-dot';
+      catDot.style.background = cat.color;
+      label.appendChild(catDot);
+      label.appendChild(document.createTextNode(monitors[i].shortName));
+      checkboxEls[i] = cb;
+      catCheckboxEls[catKey] = cb;
+      list.appendChild(label);
+      return;
+    }
+
     const section = document.createElement('div');
     section.className = 'monitor-list-category';
 
