@@ -151,13 +151,22 @@ function positionDots() {
   });
 }
 
+function sortedCategories() {
+  const grouped = {};
+  monitors.forEach((m, i) => {
+    if (!grouped[m.cat]) grouped[m.cat] = { indices: [], totalMp: 0 };
+    grouped[m.cat].indices.push(i);
+    grouped[m.cat].totalMp += m.megapixels;
+  });
+  return Object.entries(grouped)
+    .map(([key, g]) => ({ key, avgMp: g.totalMp / g.indices.length, indices: g.indices }))
+    .sort((a, b) => a.avgMp - b.avgMp);
+}
+
 function buildLegend() {
   legendContainer.innerHTML = '';
-  const seen = new Set();
-  monitors.forEach(m => {
-    if (seen.has(m.cat)) return;
-    seen.add(m.cat);
-    const cat = categories[m.cat];
+  sortedCategories().forEach(({ key }) => {
+    const cat = categories[key];
     const item = document.createElement('div');
     item.className = 'legend-item';
     const dot = document.createElement('div');
@@ -383,13 +392,7 @@ function buildMonitorPanel() {
   const list = document.createElement('div');
   list.className = 'monitor-list';
 
-  const grouped = {};
-  monitors.forEach((m, i) => {
-    if (!grouped[m.cat]) grouped[m.cat] = [];
-    grouped[m.cat].push(i);
-  });
-
-  Object.entries(grouped).forEach(([catKey, indices]) => {
+  sortedCategories().forEach(({ key: catKey, indices }) => {
     const cat = categories[catKey];
 
     if (indices.length === 1) {
