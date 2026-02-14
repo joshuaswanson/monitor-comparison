@@ -40,6 +40,13 @@
     { "name": "~20.4 MP",       "w": 6016, "h": 3384, "color": "#a78bfa", "default": true },
     { "name": "~33.2 MP (8K)",  "w": 7680, "h": 4320, "color": "#e879f9", "default": false }
   ],
+  "ppiLines": [
+    { "name": "100 PPI", "ppi": 100, "color": "#7a9a9a", "default": false },
+    { "name": "125 PPI", "ppi": 125, "color": "#9a7a9a", "default": true },
+    { "name": "150 PPI", "ppi": 150, "color": "#9a9a7a", "default": true },
+    { "name": "200 PPI", "ppi": 200, "color": "#60a5fa", "default": true },
+    { "name": "250 PPI", "ppi": 250, "color": "#e879f9", "default": false }
+  ],
   "areaCurves": [
     { "name": "200 in²", "area": 200, "color": "#7a9a9a", "default": false },
     { "name": "400 in²", "area": 400, "color": "#9a7a9a", "default": true },
