@@ -21,8 +21,54 @@ h1 {
   color: #f0f0f5;
 }
 
-h1 + .outer-wrapper {
-  margin-top: 28px;
+h1 + .axis-controls {
+  margin-top: 16px;
+}
+
+.axis-controls + .outer-wrapper {
+  margin-top: 16px;
+}
+
+/* Axis selector controls */
+.axis-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  justify-content: center;
+}
+
+.axis-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.axis-control-group label {
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #7a7a8e;
+  font-weight: 500;
+}
+
+.axis-control-group select {
+  background: #1e2038;
+  border: 1px solid #3a3c5a;
+  border-radius: 6px;
+  color: #c0c0d0;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.axis-control-group select:hover {
+  border-color: #6a6c8a;
+}
+
+.axis-control-group select:focus {
+  border-color: #8a8caa;
 }
 
 /* Layout */
@@ -124,15 +170,30 @@ h1 + .outer-wrapper {
   z-index: 2;
   transition: transform 0.15s ease;
 }
-.dot:hover { transform: translate(-50%, -50%) scale(1.8); z-index: 10; }
+.dot:hover,
+.dot.pinned { transform: translate(-50%, -50%) scale(1.8); z-index: 10; }
 
-.dot.cat-macbook        { background: #f5a623; box-shadow: 0 0 10px #f5a62366; }
-.dot.cat-apple-ext      { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
-.dot.cat-ultrawide-high { background: #34d399; box-shadow: 0 0 10px #34d39966; }
-.dot.cat-ultrawide-mid  { background: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
-.dot.cat-ultrawide-low  { background: #f87171; box-shadow: 0 0 10px #f8717166; }
-.dot.cat-super-ultra    { background: #fb923c; box-shadow: 0 0 10px #fb923c66; }
-.dot.cat-8k             { background: #e879f9; box-shadow: 0 0 10px #e879f966; }
+.dot.fan-animate {
+  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.15s ease;
+}
+
+.monitor-label.fan-animate {
+  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.25s ease;
+}
+
+.dot.cat-macbook         { background: #f5a623; box-shadow: 0 0 10px #f5a62366; }
+.dot.cat-apple-ext       { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
+.dot.cat-ultrawide-high  { background: #34d399; box-shadow: 0 0 10px #34d39966; }
+.dot.cat-ultrawide-mid   { background: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
+.dot.cat-ultrawide-low   { background: #f87171; box-shadow: 0 0 10px #f8717166; }
+.dot.cat-super-ultra     { background: #fb923c; box-shadow: 0 0 10px #fb923c66; }
+.dot.cat-8k              { background: #e879f9; box-shadow: 0 0 10px #e879f966; }
+.dot.cat-ultrawide-6k    { background: #2dd4bf; box-shadow: 0 0 10px #2dd4bf66; }
+.dot.cat-ultrawide-entry { background: #fbbf24; box-shadow: 0 0 10px #fbbf2466; }
 
 /* Monitor labels */
 .monitor-label {
@@ -225,11 +286,12 @@ h1 + .outer-wrapper {
 
 /* Legend */
 .legend {
-  display: flex;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 6px 28px;
   margin-top: 20px;
-  flex-wrap: wrap;
   justify-content: center;
+  max-width: 820px;
 }
 .legend-item {
   display: flex;
@@ -368,4 +430,75 @@ h1 + .outer-wrapper {
 
 .note-item {
   white-space: nowrap;
+}
+
+/* Filter panel */
+.filter-panel {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.filter-list {
+  display: none;
+  max-width: 820px;
+  margin: 14px auto 0;
+  text-align: left;
+  background: #161822;
+  border: 1px solid #2a2c3a;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.filter-list.open {
+  display: block;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-row-label {
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9a9aae;
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.filter-input {
+  background: #1e2038;
+  border: 1px solid #3a3c5a;
+  border-radius: 6px;
+  color: #c0c0d0;
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 7px;
+  width: 80px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-input::placeholder {
+  color: #4a4a5e;
+}
+
+.filter-input:hover {
+  border-color: #6a6c8a;
+}
+
+.filter-input:focus {
+  border-color: #8a8caa;
+}
+
+.filter-input-label {
+  font-size: 0.62rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #55556a;
 }
