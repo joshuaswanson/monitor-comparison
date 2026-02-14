@@ -2,6 +2,7 @@
   "monitors": [
     { "name": "Samsung SyncMaster SA850 27\" (Joshua's monitor)", "w": 2560, "h": 1440, "diag": 27, "cat": "joshua-monitor", "shortName": "SA850 27\"" },
     { "name": "MacBook Pro 16\" M1 Max", "w": 3456, "h": 2234, "diag": 16.2, "cat": "macbook", "shortName": "MacBook Pro 16\"" },
+    { "name": "Apple iMac 24\" M4", "w": 4480, "h": 2520, "diag": 23.5, "cat": "apple-ext", "shortName": "iMac 24\"" },
     { "name": "Apple Studio Display 27\"", "w": 5120, "h": 2880, "diag": 27, "cat": "apple-ext", "shortName": "Studio Display" },
     { "name": "Apple Pro Display XDR 32\"", "w": 6016, "h": 3384, "diag": 32, "cat": "apple-ext", "shortName": "Pro Display XDR" },
     { "name": "Dell UP3218K 32\" 8K", "w": 7680, "h": 4320, "diag": 31.5, "cat": "8k", "shortName": "Dell 8K" },
