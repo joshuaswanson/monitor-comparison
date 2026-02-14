@@ -367,6 +367,7 @@ h1 + .axis-controls {
   padding: 0;
   letter-spacing: 0.04em;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .panel-toggle:hover {
@@ -386,7 +387,7 @@ h1 + .axis-controls {
 
 .monitor-list {
   display: none;
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   text-align: left;
   background: #161822;
   border: 1px solid #2a2c3a;
