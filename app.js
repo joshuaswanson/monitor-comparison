@@ -120,8 +120,9 @@ function positionDots() {
 
       singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
     } else if (group.expanded) {
-      const offsets = fanOffsets(indices.length);
-      indices.forEach((mi, j) => {
+      const visIndices = indices.filter(mi => visibleMonitors.has(mi));
+      const offsets = fanOffsets(visIndices.length);
+      visIndices.forEach((mi, j) => {
         const x = cx + offsets[j].dx;
         const y = cy + offsets[j].dy;
         dotEls[mi].style.left = x + 'px';
@@ -142,6 +143,11 @@ function positionDots() {
         else ly -= 4;
         labelEls[mi].style.left = lx + 'px';
         labelEls[mi].style.top = ly + 'px';
+      });
+      // Hidden dots in this group still go to centroid
+      indices.filter(mi => !visibleMonitors.has(mi)).forEach(mi => {
+        dotEls[mi].style.left = cx + 'px';
+        dotEls[mi].style.top = cy + 'px';
       });
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
