@@ -474,6 +474,10 @@ h1 + .axis-controls {
   display: block;
 }
 
+.ref-all-toggle {
+  margin-bottom: 6px;
+}
+
 .ref-list-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
