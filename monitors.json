@@ -1,5 +1,6 @@
 {
   "monitors": [
+    { "name": "Samsung SyncMaster SA850 27\" (Joshua's monitor)", "w": 2560, "h": 1440, "diag": 27, "cat": "joshua-monitor", "shortName": "SA850 27\" (ref)" },
     { "name": "MacBook Pro 16\" M1 Max", "w": 3456, "h": 2234, "diag": 16.2, "cat": "macbook", "shortName": "MacBook Pro 16\"" },
     { "name": "Apple Studio Display 27\"", "w": 5120, "h": 2880, "diag": 27, "cat": "apple-ext", "shortName": "Studio Display" },
     { "name": "Apple Pro Display XDR 32\"", "w": 6016, "h": 3384, "diag": 32, "cat": "apple-ext", "shortName": "Pro Display XDR" },
@@ -55,6 +56,7 @@
     { "name": "800 in²", "area": 800, "color": "#e879f9", "default": false }
   ],
   "categories": {
+    "joshua-monitor":  { "label": "Joshua's Samsung SA850 (ref)", "color": "#f472b6" },
     "macbook":         { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
     "apple-ext":       { "label": "Apple external",            "color": "#a78bfa" },
     "8k":              { "label": "8K class",                  "color": "#e879f9" },
