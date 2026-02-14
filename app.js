@@ -189,16 +189,13 @@ function positionDots() {
     }
   });
 
-  // Hide non-expanded badges (and their dots) that are too close to any expanded dot
+  // Hide non-expanded badges/dots and singletons that are too close to expanded cluster dots
   const hideThreshold = 35;
   nonExpandedBadges.forEach(({ el, x, y, indices }) => {
     let tooClose = false;
     for (const ep of expandedDotPositions) {
       const dx = x - ep.x, dy = y - ep.y;
-      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) {
-        tooClose = true;
-        break;
-      }
+      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) { tooClose = true; break; }
     }
     el.style.opacity = tooClose ? '0' : '1';
     el.style.pointerEvents = tooClose ? 'none' : '';
@@ -207,10 +204,24 @@ function positionDots() {
     });
   });
 
-  // Collect all visible dot positions for collision checks
+  // Hide singleton dots/labels that are too close to expanded cluster dots
+  const hiddenSingletons = new Set();
+  singletonLabels.forEach(sl => {
+    let tooClose = false;
+    for (const ep of expandedDotPositions) {
+      const dx = sl.cx - ep.x, dy = sl.cy - ep.y;
+      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) { tooClose = true; break; }
+    }
+    if (tooClose) hiddenSingletons.add(sl.idx);
+    dotEls[sl.idx].style.opacity = tooClose ? '0' : '';
+    labelEls[sl.idx].style.opacity = tooClose ? '0' : '1';
+  });
+
+  // Collect all visible dot positions for collision checks (exclude hidden singletons)
   const allDotPositions = [];
   monitors.forEach((_, i) => {
     if (!visibleMonitors.has(i)) return;
+    if (hiddenSingletons.has(i)) return;
     allDotPositions.push({
       x: parseFloat(dotEls[i].style.left),
       y: parseFloat(dotEls[i].style.top),
@@ -218,27 +229,13 @@ function positionDots() {
     });
   });
 
-  // Collision avoidance for singleton labels: nudge away from other dots and labels
+  // Collision avoidance for singleton labels
   const labelHeight = 11;
-  const labelWidth = 70;
-  const dotR = 7;
+  const dotR = 8;
 
-  // Sort by vertical position so we nudge downward predictably
-  singletonLabels.sort((a, b) => a.ly - b.ly);
-
-  // Label-label collision avoidance
-  for (let i = 1; i < singletonLabels.length; i++) {
-    const prev = singletonLabels[i - 1];
-    const curr = singletonLabels[i];
-    if (Math.abs(curr.lx - prev.lx) < 120 && curr.ly - prev.ly < labelHeight) {
-      curr.ly = prev.ly + labelHeight;
-    }
-  }
-
-  // Label-dot collision avoidance: try nearby positions, keep closest that's clear
-  function labelHitsDot(lx, ly, alignR, ownIdx) {
-    const lLeft = alignR ? lx - labelWidth : lx;
-    const lRight = lLeft + labelWidth;
+  function labelHitsDot(lx, ly, lw, alignR, ownIdx) {
+    const lLeft = alignR ? lx - lw : lx;
+    const lRight = lLeft + lw;
     for (const dp of allDotPositions) {
       if (dp.idx === ownIdx) continue;
       if (lRight > dp.x - dotR && lLeft < dp.x + dotR &&
@@ -249,9 +246,11 @@ function positionDots() {
     return false;
   }
 
+  // Label-dot collision: try nearby positions around own dot
   singletonLabels.forEach(sl => {
-    if (!labelHitsDot(sl.lx, sl.ly, sl.alignRight, sl.idx)) return;
-    // Try alternative positions near the dot
+    if (hiddenSingletons.has(sl.idx)) return;
+    const lw = labelEls[sl.idx].offsetWidth || 70;
+    if (!labelHitsDot(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) return;
     const candidates = [
       { lx: sl.cx + 10, ly: sl.cy - 14, alignRight: false },   // above-right
       { lx: sl.cx + 10, ly: sl.cy + 10, alignRight: false },   // below-right
@@ -260,7 +259,7 @@ function positionDots() {
       { lx: sl.cx - 10, ly: sl.cy + 10, alignRight: true },    // below-left
     ];
     for (const c of candidates) {
-      if (!labelHitsDot(c.lx, c.ly, c.alignRight, sl.idx)) {
+      if (!labelHitsDot(c.lx, c.ly, lw, c.alignRight, sl.idx)) {
         sl.lx = c.lx;
         sl.ly = c.ly;
         sl.alignRight = c.alignRight;
@@ -268,6 +267,16 @@ function positionDots() {
       }
     }
   });
+
+  // Label-label collision: nudge overlapping labels vertically
+  singletonLabels.sort((a, b) => a.ly - b.ly);
+  for (let i = 1; i < singletonLabels.length; i++) {
+    const prev = singletonLabels[i - 1];
+    const curr = singletonLabels[i];
+    if (Math.abs(curr.lx - prev.lx) < 120 && curr.ly - prev.ly < labelHeight) {
+      curr.ly = prev.ly + labelHeight;
+    }
+  }
 
   // Apply final positions
   singletonLabels.forEach(({ idx, lx, ly, alignRight }) => {
