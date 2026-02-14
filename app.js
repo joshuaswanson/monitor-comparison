@@ -2,6 +2,7 @@ let monitors = [];
 let categories = {};
 let ratioLines = [];
 let mpCurves = [];
+let areaCurves = [];
 
 let groups = {};
 const dotEls = [];
@@ -11,6 +12,7 @@ let badgeEls = {};
 let visibleMonitors = new Set();
 let ratioEnabled = new Set();
 let mpEnabled = new Set();
+let areaEnabled = new Set();
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
@@ -45,6 +47,7 @@ const legendContainer = document.getElementById('legend');
 // Persistent SVG elements for reference lines
 const ratioLineEls = [];
 const mpCurveEls = [];
+const areaCurveEls = [];
 let refSvg = null;
 let gridLayer = null;
 
@@ -176,6 +179,7 @@ function positionDots() {
         badgeEls[key].style.opacity = '0.4';
       }
     } else {
+      const visIndices = indices.filter(mi => visibleMonitors.has(mi));
       indices.forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
@@ -185,6 +189,16 @@ function positionDots() {
         labelEls[mi].style.opacity = '0';
         labelEls[mi].style.zIndex = '';
       });
+      // If only one monitor visible in this cluster, show its label like a singleton
+      if (visIndices.length === 1) {
+        const i = visIndices[0];
+        labelEls[i].style.opacity = '1';
+        let lx = cx + 10, ly = cy - 4;
+        let alignRight = false;
+        if (cx > W * 0.85) { alignRight = true; lx = cx - 10; }
+        if (cy < H * 0.1) ly = cy + 10;
+        singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
+      }
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
         badgeEls[key].style.top = cy + 'px';
@@ -236,17 +250,34 @@ function positionDots() {
     });
   });
 
+  // Add visible badge positions as obstacles (badges are wider than dots)
+  const badgeObstacles = [];
+  nonExpandedBadges.forEach(({ el, x, y }) => {
+    if (el.style.opacity === '0') return;
+    const bw = (el.offsetWidth || 30) / 2 + 2;
+    const bh = (el.offsetHeight || 18) / 2 + 2;
+    badgeObstacles.push({ x, y, hw: bw, hh: bh });
+  });
+
   // Collision avoidance for singleton labels
   const labelHeight = 11;
   const dotR = 8;
 
-  function labelHitsDot(lx, ly, lw, alignR, ownIdx) {
+  function labelHitsObstacle(lx, ly, lw, alignR, ownIdx) {
     const lLeft = alignR ? lx - lw : lx;
     const lRight = lLeft + lw;
+    const lTop = ly;
+    const lBottom = ly + labelHeight;
     for (const dp of allDotPositions) {
       if (dp.idx === ownIdx) continue;
       if (lRight > dp.x - dotR && lLeft < dp.x + dotR &&
-          ly + labelHeight > dp.y - dotR && ly < dp.y + dotR) {
+          lBottom > dp.y - dotR && lTop < dp.y + dotR) {
+        return true;
+      }
+    }
+    for (const b of badgeObstacles) {
+      if (lRight > b.x - b.hw && lLeft < b.x + b.hw &&
+          lBottom > b.y - b.hh && lTop < b.y + b.hh) {
         return true;
       }
     }
@@ -257,7 +288,7 @@ function positionDots() {
   singletonLabels.forEach(sl => {
     if (hiddenSingletons.has(sl.idx)) return;
     const lw = labelEls[sl.idx].offsetWidth || 70;
-    if (!labelHitsDot(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) return;
+    if (!labelHitsObstacle(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) return;
     const candidates = [
       { lx: sl.cx + 10, ly: sl.cy - 14, alignRight: false },   // above-right
       { lx: sl.cx + 10, ly: sl.cy + 10, alignRight: false },   // below-right
@@ -266,7 +297,7 @@ function positionDots() {
       { lx: sl.cx - 10, ly: sl.cy + 10, alignRight: true },    // below-left
     ];
     for (const c of candidates) {
-      if (!labelHitsDot(c.lx, c.ly, lw, c.alignRight, sl.idx)) {
+      if (!labelHitsObstacle(c.lx, c.ly, lw, c.alignRight, sl.idx)) {
         sl.lx = c.lx;
         sl.ly = c.ly;
         sl.alignRight = c.alignRight;
@@ -274,16 +305,6 @@ function positionDots() {
       }
     }
   });
-
-  // Label-label collision: nudge overlapping labels vertically
-  singletonLabels.sort((a, b) => a.ly - b.ly);
-  for (let i = 1; i < singletonLabels.length; i++) {
-    const prev = singletonLabels[i - 1];
-    const curr = singletonLabels[i];
-    if (Math.abs(curr.lx - prev.lx) < 120 && curr.ly - prev.ly < labelHeight) {
-      curr.ly = prev.ly + labelHeight;
-    }
-  }
 
   // Apply final positions
   singletonLabels.forEach(({ idx, lx, ly, alignRight }) => {
@@ -389,11 +410,12 @@ function createRatioLines() {
 
 function updateRatioLines() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
   const xIsAr = xAxisKey === 'ar';
   const yIsAr = yAxisKey === 'ar';
 
   ratioLineEls.forEach(({ line, label, data }, i) => {
-    if (!ratioEnabled.has(i) || (!isWH && !xIsAr && !yIsAr)) {
+    if (!ratioEnabled.has(i) || (!isWH && !isWInHIn && !xIsAr && !yIsAr)) {
       // Hide: move offscreen
       line.setAttribute('x1', -100);
       line.setAttribute('y1', -100);
@@ -405,8 +427,8 @@ function updateRatioLines() {
 
     label.style.display = '';
 
-    if (isWH) {
-      // Original diagonal clipping math
+    if (isWH || isWInHIn) {
+      // Diagonal clipping math (works for both pixel and inch axes since ratio = x/y)
       const wAtHmin = data.r * yRange.min;
       const wAtHmax = data.r * yRange.max;
 
@@ -497,49 +519,89 @@ function createMpCurves() {
   });
 }
 
+function drawHyperbola(k, path, label) {
+  label.style.display = '';
+  let d = '';
+  let lastVisible = null;
+  for (let j = 0; j <= CURVE_SAMPLES; j++) {
+    const t = j / CURVE_SAMPLES;
+    const px = xRange.min + t * (xRange.max - xRange.min);
+    const py = k / px;
+    const sx = xPos(px);
+    const sy = yPos(py);
+    const inBounds = sy >= 0 && sy <= H && sx >= 0 && sx <= W;
+    if (inBounds) {
+      d += (d ? ' L ' : 'M ') + sx.toFixed(1) + ' ' + sy.toFixed(1);
+      lastVisible = { sx, sy };
+    } else if (d) {
+      // Clamp one final point to edge so line exits cleanly
+      const csx = Math.max(0, Math.min(W, sx));
+      const csy = Math.max(0, Math.min(H, sy));
+      d += ' L ' + csx.toFixed(1) + ' ' + csy.toFixed(1);
+      break;
+    }
+  }
+  path.setAttribute('d', d || 'M -100 -100');
+
+  if (lastVisible) {
+    const atTopEdge = lastVisible.sy <= 2;
+    const atRightEdge = lastVisible.sx >= W - 2;
+    if (atTopEdge && !atRightEdge) {
+      label.style.left = (lastVisible.sx - 6) + 'px';
+      label.style.top = (lastVisible.sy - 18) + 'px';
+    } else {
+      label.style.left = (lastVisible.sx + 6) + 'px';
+      label.style.top = (lastVisible.sy - 6) + 'px';
+    }
+  } else {
+    label.style.display = 'none';
+  }
+}
+
 function updateMpCurves() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
 
   mpCurveEls.forEach(({ path, label, data }, i) => {
     if (!mpEnabled.has(i) || !isWH) {
-      // Hide when not in W/H mode
       path.setAttribute('d', 'M -100 -100');
       label.style.display = 'none';
       return;
     }
+    drawHyperbola(data.w * data.h, path, label);
+  });
+}
 
-    label.style.display = '';
-    const k = data.w * data.h;
-    const pts = [];
-    let lastVisible = null;
-    for (let i = 0; i <= CURVE_SAMPLES; i++) {
-      const t = i / CURVE_SAMPLES;
-      const px = xRange.min + t * (xRange.max - xRange.min);
-      const py = k / px;
-      const sx = xPos(px);
-      const sy = yPos(py);
-      const csx = Math.max(0, Math.min(W, sx));
-      const csy = Math.max(0, Math.min(H, sy));
-      pts.push({ sx: csx, sy: csy });
-      if (sy >= 0 && sy <= H && sx >= 0 && sx <= W) lastVisible = { sx, sy };
-    }
-    let d = 'M ' + pts[0].sx.toFixed(1) + ' ' + pts[0].sy.toFixed(1);
-    for (let i = 1; i < pts.length; i++) {
-      d += ' L ' + pts[i].sx.toFixed(1) + ' ' + pts[i].sy.toFixed(1);
-    }
-    path.setAttribute('d', d);
+function createAreaCurves() {
+  areaCurves.forEach(curve => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', curve.color);
+    path.setAttribute('stroke-opacity', '0.2');
+    path.setAttribute('stroke-width', '1.2');
+    path.setAttribute('stroke-dasharray', '3 3');
+    path.setAttribute('fill', 'none');
+    refSvg.appendChild(path);
 
-    // Position label: check if curve exits at top edge vs right edge
-    const ep = lastVisible || pts[pts.length - 1];
-    const atTopEdge = ep.sy <= 2;
-    const atRightEdge = ep.sx >= W - 2;
-    if (atTopEdge && !atRightEdge) {
-      label.style.left = (ep.sx - 6) + 'px';
-      label.style.top = (ep.sy - 18) + 'px';
-    } else {
-      label.style.left = (ep.sx + 6) + 'px';
-      label.style.top = (ep.sy - 6) + 'px';
+    const lbl = document.createElement('div');
+    lbl.className = 'curve-label';
+    lbl.style.color = curve.color;
+    lbl.style.opacity = '0.4';
+    lbl.textContent = curve.name;
+    chartArea.appendChild(lbl);
+
+    areaCurveEls.push({ path, label: lbl, data: curve });
+  });
+}
+
+function updateAreaCurves() {
+  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+
+  areaCurveEls.forEach(({ path, label, data }, i) => {
+    if (!areaEnabled.has(i) || !isWInHIn) {
+      path.setAttribute('d', 'M -100 -100');
+      label.style.display = 'none';
+      return;
     }
+    drawHyperbola(data.area, path, label);
   });
 }
 
@@ -563,6 +625,14 @@ function avoidRefLabelOverlap() {
     refLabels.push({ el: label, top, left });
   });
 
+  areaCurveEls.forEach(({ label }) => {
+    if (label.style.display === 'none') return;
+    const top = parseFloat(label.style.top);
+    const left = parseFloat(label.style.left);
+    if (isNaN(top) || isNaN(left)) return;
+    refLabels.push({ el: label, top, left });
+  });
+
   // Sort by vertical position (top value)
   refLabels.sort((a, b) => a.top - b.top);
 
@@ -574,6 +644,12 @@ function avoidRefLabelOverlap() {
     if (Math.abs(curr.left - prev.left) < 60 && curr.top - prev.top < minGap) {
       curr.top = prev.top + minGap;
       curr.el.style.top = curr.top + 'px';
+    }
+  }
+  // Hide labels that would overflow into the x-axis area
+  for (const rl of refLabels) {
+    if (rl.top > H - 4) {
+      rl.el.style.display = 'none';
     }
   }
 }
@@ -900,15 +976,15 @@ function buildFilterPanel() {
   container.innerHTML = '';
 
   const panel = document.createElement('div');
-  panel.className = 'filter-panel';
+  panel.className = 'filter-panel filter-panel-sidebar';
 
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'filters <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
+  const heading = document.createElement('div');
+  heading.className = 'filter-sidebar-heading';
+  heading.textContent = 'Filters';
+  panel.appendChild(heading);
 
   const list = document.createElement('div');
-  list.className = 'filter-list';
+  list.className = 'filter-list open';
 
   const filterDefs = [
     { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
@@ -1013,11 +1089,6 @@ function buildFilterPanel() {
     row.appendChild(slidersDiv);
 
     list.appendChild(row);
-  });
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
   });
 
   panel.appendChild(list);
@@ -1218,6 +1289,89 @@ function buildMpPanel() {
   container.appendChild(panel);
 }
 
+function buildAreaPanel() {
+  const container = document.getElementById('areaPanel');
+  container.innerHTML = '';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.innerHTML = 'show/hide screen area curves <span class="arrow">&#9662;</span>';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'ref-list';
+
+  const allLabel = document.createElement('label');
+  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  allCb.checked = areaEnabled.size > 0;
+  allCb.indeterminate = areaEnabled.size > 0 && areaEnabled.size < areaCurves.length;
+  list.appendChild(allLabel);
+
+  const items = document.createElement('div');
+  items.className = 'ref-list-items narrow';
+
+  const areaCbs = [];
+  areaCurves.forEach((ac, i) => {
+    const label = document.createElement('label');
+    label.className = 'monitor-checkbox-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = areaEnabled.has(i);
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        areaEnabled.add(i);
+      } else {
+        areaEnabled.delete(i);
+      }
+      allCb.checked = areaEnabled.size > 0;
+      allCb.indeterminate = areaEnabled.size > 0 && areaEnabled.size < areaCurves.length;
+      updateLabelMargin();
+      updateAreaCurves();
+      avoidRefLabelOverlap();
+    });
+    areaCbs.push(cb);
+    label.appendChild(cb);
+    const dot = document.createElement('div');
+    dot.className = 'cat-dot';
+    dot.style.background = ac.color;
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode(ac.name));
+    items.appendChild(label);
+  });
+
+  allCb.addEventListener('change', () => {
+    areaCurves.forEach((_, i) => {
+      if (allCb.checked) {
+        areaEnabled.add(i);
+      } else {
+        areaEnabled.delete(i);
+      }
+      areaCbs[i].checked = allCb.checked;
+    });
+    allCb.indeterminate = false;
+    updateLabelMargin();
+    updateAreaCurves();
+    avoidRefLabelOverlap();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode('all'));
+
+  list.appendChild(items);
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.classList.toggle('open');
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+}
+
 function applyFilters() {
   monitors.forEach((m, i) => {
     const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
@@ -1359,12 +1513,15 @@ function switchAxes(newX, newY) {
 
 function updateNoteBar() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
 
   const noteRatio = document.getElementById('noteRatio');
   const noteMp = document.getElementById('noteMp');
+  const noteArea = document.getElementById('noteArea');
   const noteSep1 = document.getElementById('noteSep1');
   const noteSep2 = document.getElementById('noteSep2');
+  const noteSep3 = document.getElementById('noteSep3');
 
   if (isWH) {
     noteRatio.style.display = '';
@@ -1373,17 +1530,31 @@ function updateNoteBar() {
     noteMp.style.display = '';
     noteMp.textContent = '~~~ curve = same megapixels';
     noteSep2.style.display = '';
+    noteArea.style.display = 'none';
+    noteSep3.style.display = 'none';
+  } else if (isWInHIn) {
+    noteRatio.style.display = '';
+    noteRatio.textContent = '--- diagonal = aspect ratio';
+    noteSep1.style.display = '';
+    noteMp.style.display = 'none';
+    noteSep2.style.display = 'none';
+    noteArea.style.display = '';
+    noteSep3.style.display = '';
   } else if (hasAr) {
     noteRatio.style.display = '';
     noteRatio.textContent = '--- line = aspect ratio';
     noteSep1.style.display = 'none';
     noteMp.style.display = 'none';
-    noteSep2.style.display = '';
+    noteSep2.style.display = 'none';
+    noteArea.style.display = 'none';
+    noteSep3.style.display = '';
   } else {
     noteRatio.style.display = 'none';
     noteSep1.style.display = 'none';
     noteMp.style.display = 'none';
     noteSep2.style.display = 'none';
+    noteArea.style.display = 'none';
+    noteSep3.style.display = 'none';
   }
 }
 
@@ -1446,6 +1617,7 @@ function rerender() {
     drawGrid();
     updateRatioLines();
     updateMpCurves();
+    updateAreaCurves();
     avoidRefLabelOverlap();
     positionDots();
 
@@ -1469,6 +1641,9 @@ function measureLabelMargin() {
   mpCurveEls.forEach(({ label }) => {
     maxW = Math.max(maxW, label.offsetWidth);
   });
+  areaCurveEls.forEach(({ label }) => {
+    maxW = Math.max(maxW, label.offsetWidth);
+  });
   labelMarginRight = maxW + 14;
   chartArea.style.right = labelMarginRight + 'px';
   measureChart();
@@ -1476,10 +1651,12 @@ function measureLabelMargin() {
 
 function updateLabelMargin() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
   const hasRatio = ratioEnabled.size > 0;
   const hasMp = mpEnabled.size > 0;
-  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio);
+  const hasArea = areaEnabled.size > 0;
+  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea));
   chartArea.style.right = needsMargin ? labelMarginRight + 'px' : '20px';
   measureChart();
 }
@@ -1489,10 +1666,12 @@ function render() {
   createRefSvg();
   createRatioLines();
   createMpCurves();
+  createAreaCurves();
   measureLabelMargin();
   drawGrid();
   updateRatioLines();
   updateMpCurves();
+  updateAreaCurves();
   avoidRefLabelOverlap();
   createDots();
   createClusters();
@@ -1507,6 +1686,7 @@ async function init() {
   categories = data.categories;
   ratioLines = data.ratioLines;
   mpCurves = data.mpCurves;
+  areaCurves = data.areaCurves;
 
   // Compute derived properties
   monitors.forEach(m => {
@@ -1524,6 +1704,7 @@ async function init() {
   // Initialize enabled sets from defaults
   ratioLines.forEach((rl, i) => { if (rl.default) ratioEnabled.add(i); });
   mpCurves.forEach((mc, i) => { if (mc.default) mpEnabled.add(i); });
+  areaCurves.forEach((ac, i) => { if (ac.default) areaEnabled.add(i); });
 
   // Build initial groups (after visibleMonitors is set)
   groups = buildGroups();
@@ -1533,6 +1714,7 @@ async function init() {
   buildFilterPanel();
   buildRatioPanel();
   buildMpPanel();
+  buildAreaPanel();
   buildLegend();
   updateNoteBar();
   render();
