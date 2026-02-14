@@ -1232,11 +1232,32 @@ function updateVisibility() {
 }
 
 // Axis controls
+const AXIS_GROUPS = [
+  { label: 'Resolution', keys: ['w', 'h', 'mp'] },
+  { label: 'Physical Size', keys: ['wIn', 'hIn', 'diag', 'area'] },
+  { label: 'Density / Ratio', keys: ['ppi', 'ar'] },
+];
+
+function buildAxisSelect(selectedKey) {
+  const select = document.createElement('select');
+  AXIS_GROUPS.forEach(group => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = group.label;
+    group.keys.forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = AXES[key].label;
+      if (key === selectedKey) opt.selected = true;
+      optgroup.appendChild(opt);
+    });
+    select.appendChild(optgroup);
+  });
+  return select;
+}
+
 function buildAxisControls() {
   const container = document.getElementById('axisControls');
   container.innerHTML = '';
-
-  const axisOptions = Object.entries(AXES);
 
   // X axis
   const xGroup = document.createElement('div');
@@ -1244,14 +1265,7 @@ function buildAxisControls() {
   const xLabel = document.createElement('label');
   xLabel.textContent = 'X:';
   xGroup.appendChild(xLabel);
-  const xSelect = document.createElement('select');
-  axisOptions.forEach(([key, cfg]) => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = cfg.label;
-    if (key === xAxisKey) opt.selected = true;
-    xSelect.appendChild(opt);
-  });
+  const xSelect = buildAxisSelect(xAxisKey);
   xGroup.appendChild(xSelect);
   container.appendChild(xGroup);
 
@@ -1261,14 +1275,7 @@ function buildAxisControls() {
   const yLabel = document.createElement('label');
   yLabel.textContent = 'Y:';
   yGroup.appendChild(yLabel);
-  const ySelect = document.createElement('select');
-  axisOptions.forEach(([key, cfg]) => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = cfg.label;
-    if (key === yAxisKey) opt.selected = true;
-    ySelect.appendChild(opt);
-  });
+  const ySelect = buildAxisSelect(yAxisKey);
   yGroup.appendChild(ySelect);
   container.appendChild(yGroup);
 
