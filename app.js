@@ -9,6 +9,8 @@ const labelEls = [];
 let badgeEls = {};
 
 let visibleMonitors = new Set();
+let ratioEnabled = new Set();
+let mpEnabled = new Set();
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
@@ -317,22 +319,13 @@ function createRatioLines() {
   });
 }
 
-// Check if any visible monitor matches a given aspect ratio (within tolerance)
-function isRatioVisible(r) {
-  const tol = 0.1;
-  return monitors.some((m, i) => visibleMonitors.has(i) && Math.abs(m.ar - r) < tol);
-}
-
 function updateRatioLines() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
   const xIsAr = xAxisKey === 'ar';
   const yIsAr = yAxisKey === 'ar';
 
-  ratioLineEls.forEach(({ line, label, data }) => {
-    // Hide ratio line if no visible monitors have this ratio
-    const ratioHasVisibleMonitor = isRatioVisible(data.r);
-
-    if (!ratioHasVisibleMonitor || (!isWH && !xIsAr && !yIsAr)) {
+  ratioLineEls.forEach(({ line, label, data }, i) => {
+    if (!ratioEnabled.has(i) || (!isWH && !xIsAr && !yIsAr)) {
       // Hide: move offscreen
       line.setAttribute('x1', -100);
       line.setAttribute('y1', -100);
@@ -439,8 +432,8 @@ function createMpCurves() {
 function updateMpCurves() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
 
-  mpCurveEls.forEach(({ path, label, data }) => {
-    if (!isWH) {
+  mpCurveEls.forEach(({ path, label, data }, i) => {
+    if (!mpEnabled.has(i) || !isWH) {
       // Hide when not in W/H mode
       path.setAttribute('d', 'M -100 -100');
       label.style.display = 'none';
@@ -811,15 +804,19 @@ function buildFilterPanel() {
   list.className = 'filter-list';
 
   const filterDefs = [
-    { key: 'w',    label: 'Horizontal Pixels' },
-    { key: 'h',    label: 'Vertical Pixels' },
-    { key: 'ppi',  label: 'PPI' },
-    { key: 'ar',   label: 'Aspect Ratio' },
-    { key: 'diag', label: 'Diagonal (in)' },
-    { key: 'mp',   label: 'Megapixels' },
+    { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
+    { key: 'h',    label: 'Vertical Pixels',   step: 1,    decimals: 0 },
+    { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
+    { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
+    { key: 'diag', label: 'Diagonal (in)',      step: 0.1,  decimals: 1 },
+    { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
   ];
 
-  filterDefs.forEach(({ key, label }) => {
+  filterDefs.forEach(({ key, label, step, decimals }) => {
+    const values = monitors.map(m => getVal(m, key));
+    const dataMin = Math.floor(Math.min(...values) / step) * step;
+    const dataMax = Math.ceil(Math.max(...values) / step) * step;
+
     const row = document.createElement('div');
     row.className = 'filter-row';
 
@@ -828,31 +825,82 @@ function buildFilterPanel() {
     rowLabel.textContent = label;
     row.appendChild(rowLabel);
 
-    const minLabel = document.createElement('span');
-    minLabel.className = 'filter-input-label';
-    minLabel.textContent = 'min';
-    row.appendChild(minLabel);
+    const slidersDiv = document.createElement('div');
+    slidersDiv.className = 'filter-sliders';
 
-    const minInput = document.createElement('input');
-    minInput.type = 'number';
-    minInput.className = 'filter-input';
-    minInput.placeholder = '--';
-    minInput.step = 'any';
-    minInput.addEventListener('input', () => onFilterInput(key, 'min', minInput.value));
-    row.appendChild(minInput);
+    const minValueLabel = document.createElement('span');
+    minValueLabel.className = 'filter-value-label';
+    minValueLabel.textContent = dataMin.toFixed(decimals);
 
-    const maxLabel = document.createElement('span');
-    maxLabel.className = 'filter-input-label';
-    maxLabel.textContent = 'max';
-    row.appendChild(maxLabel);
+    const dualRange = document.createElement('div');
+    dualRange.className = 'dual-range';
 
-    const maxInput = document.createElement('input');
-    maxInput.type = 'number';
-    maxInput.className = 'filter-input';
-    maxInput.placeholder = '--';
-    maxInput.step = 'any';
-    maxInput.addEventListener('input', () => onFilterInput(key, 'max', maxInput.value));
-    row.appendChild(maxInput);
+    const track = document.createElement('div');
+    track.className = 'dual-range-track';
+    dualRange.appendChild(track);
+
+    const fill = document.createElement('div');
+    fill.className = 'dual-range-fill';
+    dualRange.appendChild(fill);
+
+    const minSlider = document.createElement('input');
+    minSlider.type = 'range';
+    minSlider.className = 'dual-range-input';
+    minSlider.min = dataMin;
+    minSlider.max = dataMax;
+    minSlider.step = step;
+    minSlider.value = dataMin;
+
+    const maxSlider = document.createElement('input');
+    maxSlider.type = 'range';
+    maxSlider.className = 'dual-range-input';
+    maxSlider.min = dataMin;
+    maxSlider.max = dataMax;
+    maxSlider.step = step;
+    maxSlider.value = dataMax;
+
+    const maxValueLabel = document.createElement('span');
+    maxValueLabel.className = 'filter-value-label';
+    maxValueLabel.textContent = dataMax.toFixed(decimals);
+
+    function updateFill() {
+      const range = dataMax - dataMin || 1;
+      const left = ((parseFloat(minSlider.value) - dataMin) / range) * 100;
+      const right = ((parseFloat(maxSlider.value) - dataMin) / range) * 100;
+      fill.style.left = left + '%';
+      fill.style.width = (right - left) + '%';
+    }
+    updateFill();
+
+    minSlider.addEventListener('input', () => {
+      let v = parseFloat(minSlider.value);
+      if (v > parseFloat(maxSlider.value)) {
+        v = parseFloat(maxSlider.value);
+        minSlider.value = v;
+      }
+      minValueLabel.textContent = v.toFixed(decimals);
+      updateFill();
+      onSliderInput(key, v, parseFloat(maxSlider.value), dataMin, dataMax);
+    });
+
+    maxSlider.addEventListener('input', () => {
+      let v = parseFloat(maxSlider.value);
+      if (v < parseFloat(minSlider.value)) {
+        v = parseFloat(minSlider.value);
+        maxSlider.value = v;
+      }
+      maxValueLabel.textContent = v.toFixed(decimals);
+      updateFill();
+      onSliderInput(key, parseFloat(minSlider.value), v, dataMin, dataMax);
+    });
+
+    dualRange.appendChild(minSlider);
+    dualRange.appendChild(maxSlider);
+
+    slidersDiv.appendChild(minValueLabel);
+    slidersDiv.appendChild(dualRange);
+    slidersDiv.appendChild(maxValueLabel);
+    row.appendChild(slidersDiv);
 
     list.appendChild(row);
   });
@@ -866,19 +914,23 @@ function buildFilterPanel() {
   container.appendChild(panel);
 }
 
-function onFilterInput(key, bound, value) {
+function onSliderInput(key, minVal, maxVal, dataMin, dataMax) {
   clearTimeout(filterDebounceTimer);
   filterDebounceTimer = setTimeout(() => {
     if (!filters[key]) filters[key] = {};
-    const num = parseFloat(value);
-    if (isNaN(num) || value.trim() === '') {
-      delete filters[key][bound];
-      if (Object.keys(filters[key]).length === 0) delete filters[key];
+    if (minVal > dataMin) {
+      filters[key].min = minVal;
     } else {
-      filters[key][bound] = num;
+      delete filters[key].min;
     }
+    if (maxVal < dataMax) {
+      filters[key].max = maxVal;
+    } else {
+      delete filters[key].max;
+    }
+    if (Object.keys(filters[key]).length === 0) delete filters[key];
     applyFilters();
-  }, 200);
+  }, 30);
 }
 
 function passesFilters(m) {
@@ -888,6 +940,112 @@ function passesFilters(m) {
     if (bounds.max !== undefined && val > bounds.max) return false;
   }
   return true;
+}
+
+function buildRatioPanel() {
+  const container = document.getElementById('ratioPanel');
+  container.innerHTML = '';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.innerHTML = 'show/hide aspect ratio lines <span class="arrow">&#9662;</span>';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'ref-list';
+
+  const items = document.createElement('div');
+  items.className = 'ref-list-items';
+
+  ratioLines.forEach((rl, i) => {
+    const label = document.createElement('label');
+    label.className = 'monitor-checkbox-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = ratioEnabled.has(i);
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        ratioEnabled.add(i);
+      } else {
+        ratioEnabled.delete(i);
+      }
+      updateRatioLines();
+      avoidRefLabelOverlap();
+    });
+    label.appendChild(cb);
+    const dot = document.createElement('div');
+    dot.className = 'cat-dot';
+    dot.style.background = rl.color;
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode(rl.name));
+    items.appendChild(label);
+  });
+
+  list.appendChild(items);
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.classList.toggle('open');
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+}
+
+function buildMpPanel() {
+  const container = document.getElementById('mpPanel');
+  container.innerHTML = '';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.innerHTML = 'show/hide megapixel curves <span class="arrow">&#9662;</span>';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'ref-list';
+
+  const items = document.createElement('div');
+  items.className = 'ref-list-items';
+
+  mpCurves.forEach((mc, i) => {
+    const label = document.createElement('label');
+    label.className = 'monitor-checkbox-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = mpEnabled.has(i);
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        mpEnabled.add(i);
+      } else {
+        mpEnabled.delete(i);
+      }
+      updateMpCurves();
+      avoidRefLabelOverlap();
+    });
+    label.appendChild(cb);
+    const dot = document.createElement('div');
+    dot.className = 'cat-dot';
+    dot.style.background = mc.color;
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode(mc.name));
+    items.appendChild(label);
+  });
+
+  list.appendChild(items);
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.classList.toggle('open');
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
 }
 
 function applyFilters() {
@@ -913,7 +1071,8 @@ function updateVisibility() {
     }
   });
 
-  // Sync category checkbox states
+  // Sync category checkbox states (based on individual checkbox states, not visibility,
+  // so that filters don't permanently uncheck monitors)
   const grouped = {};
   monitors.forEach((m, i) => {
     if (!grouped[m.cat]) grouped[m.cat] = [];
@@ -921,9 +1080,10 @@ function updateVisibility() {
   });
   Object.entries(grouped).forEach(([catKey, indices]) => {
     if (!catCheckboxEls[catKey]) return;
-    const visCount = indices.filter(i => visibleMonitors.has(i)).length;
-    catCheckboxEls[catKey].checked = visCount > 0;
-    catCheckboxEls[catKey].indeterminate = visCount > 0 && visCount < indices.length;
+    if (indices.length === 1) return; // single-monitor: checkbox IS the control
+    const checkedCount = indices.filter(i => checkboxEls[i] && checkboxEls[i].checked).length;
+    catCheckboxEls[catKey].checked = checkedCount > 0;
+    catCheckboxEls[catKey].indeterminate = checkedCount > 0 && checkedCount < indices.length;
   });
 
   // Animate dots in expanded clusters only if that group's visible count changed
@@ -1166,12 +1326,18 @@ async function init() {
 
   visibleMonitors = new Set(monitors.map((_, i) => i));
 
+  // Initialize enabled sets from defaults
+  ratioLines.forEach((rl, i) => { if (rl.default) ratioEnabled.add(i); });
+  mpCurves.forEach((mc, i) => { if (mc.default) mpEnabled.add(i); });
+
   // Build initial groups (after visibleMonitors is set)
   groups = buildGroups();
 
   buildAxisControls();
   buildMonitorPanel();
   buildFilterPanel();
+  buildRatioPanel();
+  buildMpPanel();
   buildLegend();
   updateNoteBar();
   render();
