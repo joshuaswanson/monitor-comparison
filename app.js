@@ -272,12 +272,11 @@ function updateRatioLines() {
     line.setAttribute('x2', sx2);
     line.setAttribute('y2', sy2);
 
-    // Position label near the upper end of the line
-    const t = 0.88;
-    const lx = sx1 + (sx2 - sx1) * t;
-    const ly = sy1 + (sy2 - sy1) * t;
-    label.style.left = (lx + 8) + 'px';
-    label.style.top = (ly - 16) + 'px';
+    // Position label at a fixed point along the line (in data space)
+    const labelW = x1d + (x2d - x1d) * 0.88;
+    const labelH = labelW / data.r;
+    label.style.left = (xPos(labelW) + 8) + 'px';
+    label.style.top = (yPos(labelH) - 16) + 'px';
   });
 }
 
