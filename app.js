@@ -236,7 +236,6 @@ function createRatioLines() {
     lbl.style.color = rl.color;
     lbl.style.opacity = '0.5';
     lbl.textContent = rl.name;
-    lbl.style.transition = 'left 0.35s ease, top 0.35s ease';
     chartArea.appendChild(lbl);
 
     ratioLineEls.push({ line, label: lbl, data: rl });
