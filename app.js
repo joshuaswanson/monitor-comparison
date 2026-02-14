@@ -9,6 +9,9 @@ const labelEls = [];
 const badgeEls = {};
 const resLabelEls = {};
 
+let activeCategories = new Set();
+let visibleMonitors = new Set();
+
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
 const chartArea = document.getElementById('chartArea');
@@ -216,7 +219,7 @@ function drawRatioLines() {
     for (let pw = 0; pw <= 12000; pw += 50) {
       const ph = pw / rl.r;
       const sx = xPos(pw), sy = yPos(ph);
-      if (sx >= -50 && sx <= W + 50 && sy >= -50 && sy <= H + 50) pts.push({ sx, sy });
+      if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) pts.push({ sx, sy });
     }
     if (pts.length < 2) return;
 
@@ -311,6 +314,152 @@ function createClusters() {
   });
 }
 
+function buildFilterChips() {
+  const container = document.getElementById('filters');
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'filter-chips';
+
+  Object.entries(categories).forEach(([key, cat]) => {
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip active';
+    chip.style.borderColor = cat.color;
+    chip.style.color = cat.color;
+
+    const dot = document.createElement('div');
+    dot.className = 'chip-dot';
+    dot.style.background = cat.color;
+    chip.appendChild(dot);
+    chip.appendChild(document.createTextNode(cat.label));
+
+    chip.addEventListener('click', () => {
+      if (activeCategories.has(key)) {
+        activeCategories.delete(key);
+        chip.className = 'filter-chip inactive';
+        monitors.forEach((m, i) => {
+          if (m.cat === key) visibleMonitors.delete(i);
+        });
+      } else {
+        activeCategories.add(key);
+        chip.className = 'filter-chip active';
+        chip.style.borderColor = cat.color;
+        chip.style.color = cat.color;
+        monitors.forEach((m, i) => {
+          if (m.cat === key) visibleMonitors.add(i);
+        });
+      }
+      syncCheckboxes();
+      updateVisibility();
+    });
+
+    wrap.appendChild(chip);
+  });
+
+  container.appendChild(wrap);
+}
+
+const checkboxEls = [];
+
+function buildMonitorPanel() {
+  const container = document.getElementById('monitorPanel');
+  container.innerHTML = '';
+  const panel = document.createElement('div');
+  panel.className = 'monitor-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.textContent = 'Individual monitors';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'monitor-list';
+
+  const grouped = {};
+  monitors.forEach((m, i) => {
+    if (!grouped[m.cat]) grouped[m.cat] = [];
+    grouped[m.cat].push(i);
+  });
+
+  Object.entries(grouped).forEach(([catKey, indices]) => {
+    const cat = categories[catKey];
+    const section = document.createElement('div');
+    section.className = 'monitor-list-category';
+
+    const title = document.createElement('div');
+    title.className = 'monitor-list-category-title';
+    const catDot = document.createElement('div');
+    catDot.className = 'cat-dot';
+    catDot.style.background = cat.color;
+    title.appendChild(catDot);
+    title.appendChild(document.createTextNode(cat.label));
+    section.appendChild(title);
+
+    const items = document.createElement('div');
+    items.className = 'monitor-list-items';
+
+    indices.forEach(i => {
+      const label = document.createElement('label');
+      label.className = 'monitor-checkbox-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = true;
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          visibleMonitors.add(i);
+        } else {
+          visibleMonitors.delete(i);
+        }
+        updateVisibility();
+      });
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(monitors[i].shortName));
+      items.appendChild(label);
+      checkboxEls[i] = cb;
+    });
+
+    section.appendChild(items);
+    list.appendChild(section);
+  });
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.textContent = list.classList.contains('open') ? 'Hide individual monitors' : 'Individual monitors';
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+}
+
+function syncCheckboxes() {
+  monitors.forEach((m, i) => {
+    if (checkboxEls[i]) checkboxEls[i].checked = visibleMonitors.has(i);
+  });
+}
+
+function updateVisibility() {
+  monitors.forEach((m, i) => {
+    const show = visibleMonitors.has(i);
+    dotEls[i].style.display = show ? '' : 'none';
+    labelEls[i].style.display = show ? '' : 'none';
+  });
+
+  Object.entries(groups).forEach(([key, group]) => {
+    if (group.indices.length <= 1) return;
+    const visCount = group.indices.filter(i => visibleMonitors.has(i)).length;
+    if (badgeEls[key]) {
+      if (visCount <= 1) {
+        badgeEls[key].style.display = 'none';
+      } else {
+        badgeEls[key].style.display = '';
+        badgeEls[key].textContent = 'x' + visCount;
+      }
+    }
+    if (resLabelEls[key]) {
+      resLabelEls[key].style.display = visCount === 0 ? 'none' : '';
+    }
+  });
+}
+
 function render() {
   computeLayout();
   drawGrid();
@@ -341,6 +490,11 @@ async function init() {
     groups[key].indices.push(i);
   });
 
+  activeCategories = new Set(Object.keys(categories));
+  visibleMonitors = new Set(monitors.map((_, i) => i));
+
+  buildFilterChips();
+  buildMonitorPanel();
   buildLegend();
   render();
 }

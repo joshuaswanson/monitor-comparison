@@ -78,7 +78,6 @@ h1 {
   left: 20px;
   right: 20px;
   bottom: 30px;
-  overflow: hidden;
 }
 
 .x-axis-title {
@@ -247,6 +246,128 @@ h1 {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+/* Filter chips */
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  font-size: 0.73rem;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.filter-chip .chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.filter-chip.active {
+  opacity: 1;
+}
+
+.filter-chip.inactive {
+  border-color: #3a3c52;
+  color: #5a5a6e;
+  opacity: 0.5;
+}
+
+.filter-chip.inactive .chip-dot {
+  opacity: 0.4;
+}
+
+/* Monitor panel */
+.monitor-panel {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.panel-toggle {
+  background: none;
+  border: 1px solid #3a3c52;
+  color: #7a7a8e;
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.panel-toggle:hover {
+  color: #b0b0c0;
+  border-color: #5a5c72;
+}
+
+.monitor-list {
+  display: none;
+  max-width: 820px;
+  margin: 10px auto 0;
+  text-align: left;
+}
+
+.monitor-list.open {
+  display: block;
+}
+
+.monitor-list-category {
+  margin-bottom: 8px;
+}
+
+.monitor-list-category-title {
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #7a7a8e;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monitor-list-category-title .cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.monitor-list-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-left: 12px;
+}
+
+.monitor-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9a9aae;
+  cursor: pointer;
+  user-select: none;
+}
+
+.monitor-checkbox-label input[type="checkbox"] {
+  accent-color: #7a7a8e;
+  cursor: pointer;
 }
 
 /* Footer note */
