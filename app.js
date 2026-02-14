@@ -127,7 +127,9 @@ function positionDots() {
         const y = cy + offsets[j].dy;
         dotEls[mi].style.left = x + 'px';
         dotEls[mi].style.top = y + 'px';
+        dotEls[mi].style.zIndex = '5';
         labelEls[mi].style.opacity = '1';
+        labelEls[mi].style.zIndex = '6';
 
         const dx = offsets[j].dx, dy = offsets[j].dy;
         let lx = x + dx * 1.1, ly = y + dy * 1.1;
@@ -158,7 +160,9 @@ function positionDots() {
       indices.forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
+        dotEls[mi].style.zIndex = '';
         labelEls[mi].style.opacity = '0';
+        labelEls[mi].style.zIndex = '';
       });
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
@@ -891,6 +895,27 @@ function updateVisibility() {
     catCheckboxEls[catKey].checked = visCount > 0;
     catCheckboxEls[catKey].indeterminate = visCount > 0 && visCount < indices.length;
   });
+
+  // Animate dots in expanded clusters to their new fan positions
+  const animatingDots = [];
+  Object.values(groups).forEach(group => {
+    if (!group.expanded || group.indices.length <= 1) return;
+    group.indices.forEach(mi => {
+      if (visibleMonitors.has(mi)) {
+        dotEls[mi].classList.add('fan-animate');
+        labelEls[mi].classList.add('fan-animate');
+        animatingDots.push(mi);
+      }
+    });
+  });
+  if (animatingDots.length > 0) {
+    setTimeout(() => {
+      animatingDots.forEach(mi => {
+        dotEls[mi].classList.remove('fan-animate');
+        labelEls[mi].classList.remove('fan-animate');
+      });
+    }, 400);
+  }
 
   rerender();
 }
