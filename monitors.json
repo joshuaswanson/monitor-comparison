@@ -25,7 +25,6 @@
   "ratioLines": [
     { "name": "16:9", "r": 1.7778, "color": "#8888aa" },
     { "name": "21:9", "r": 2.3333, "color": "#34d399" },
-    { "name": "32:10", "r": 3.2, "color": "#2dd4bf" },
     { "name": "32:9", "r": 3.5556, "color": "#fb923c" }
   ],
   "mpCurves": [
