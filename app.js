@@ -129,17 +129,22 @@ function positionDots() {
       const i = indices[0];
       dotEls[i].style.left = cx + 'px';
       dotEls[i].style.top = cy + 'px';
-      labelEls[i].style.opacity = '1';
 
-      let lx = cx + 10, ly = cy - 4;
-      let alignRight = false;
-      if (cx > W * 0.85) {
-        alignRight = true;
-        lx = cx - 10;
+      if (!visibleMonitors.has(i)) {
+        labelEls[i].style.opacity = '0';
+      } else {
+        labelEls[i].style.opacity = '1';
+
+        let lx = cx + 10, ly = cy - 4;
+        let alignRight = false;
+        if (cx > W * 0.85) {
+          alignRight = true;
+          lx = cx - 10;
+        }
+        if (cy < H * 0.1) ly = cy + 10;
+
+        singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
       }
-      if (cy < H * 0.1) ly = cy + 10;
-
-      singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
     } else if (group.expanded) {
       const visIndices = indices.filter(mi => visibleMonitors.has(mi));
       const offsets = fanOffsets(visIndices.length);
@@ -182,6 +187,7 @@ function positionDots() {
       indices.filter(mi => !visibleMonitors.has(mi)).forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
+        labelEls[mi].style.opacity = '0';
       });
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
@@ -774,14 +780,15 @@ function showTooltipForDot(dot, m) {
   tooltip.style.top = ty + 'px';
   ttName.textContent = m.name + (m.upcoming ? ' (upcoming)' : '');
   ttDetail.innerHTML =
-    'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
-    'Megapixels: ' + m.mp.toFixed(1) + ' MP<br>' +
     'Size: ' + m.wIn.toFixed(1) + '" x ' + m.hIn.toFixed(1) + '"<br>' +
     'Diagonal: ' + m.diag + '"<br>' +
     'Area: ' + m.area.toFixed(0) + ' in&sup2;<br>' +
+    'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
+    'Megapixels: ' + m.mp.toFixed(1) + ' MP<br>' +
     'PPI: ' + m.ppi.toFixed(0) + '<br>' +
     'Aspect Ratio: ' + m.ar.toFixed(2) + '<br>' +
-    'Refresh Rate: ' + m.hz + ' Hz';
+    'Refresh Rate: ' + m.hz + ' Hz<br>' +
+    'Panel: ' + m.panel;
 }
 
 function unpinDot() {
@@ -1092,40 +1099,33 @@ function buildFilterPanel() {
   const panel = document.createElement('div');
   panel.className = 'filter-panel filter-panel-sidebar';
 
-  const heading = document.createElement('div');
-  heading.className = 'filter-sidebar-heading';
-  heading.textContent = 'Filters';
-  panel.appendChild(heading);
-
-  const list = document.createElement('div');
-  list.className = 'filter-list open';
-
   const filterGroups = [
-    { heading: 'Resolution', filters: [
-      { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
-      { key: 'h',    label: 'Vertical Pixels',   step: 1,    decimals: 0 },
-      { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
-    ]},
     { heading: 'Physical Size', filters: [
       { key: 'wIn',  label: 'Width (in)',        step: 0.1,  decimals: 1 },
       { key: 'hIn',  label: 'Height (in)',       step: 0.1,  decimals: 1 },
       { key: 'diag', label: 'Diagonal (in)',     step: 0.1,  decimals: 1 },
       { key: 'area', label: 'Screen Area (in²)', step: 1,    decimals: 0 },
     ]},
-    { heading: 'Density / Ratio', filters: [
-      { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
-      { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
+    { heading: 'Resolution', filters: [
+      { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
+      { key: 'h',    label: 'Vertical Pixels',   step: 1,    decimals: 0 },
+      { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
     ]},
     { heading: 'Other', filters: [
+      { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
+      { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
       { key: 'hz',   label: 'Refresh Rate (Hz)', step: 1,    decimals: 0 },
     ]},
   ];
 
   filterGroups.forEach(group => {
+    const section = document.createElement('div');
+    section.className = 'filter-section';
+
     const groupHeading = document.createElement('div');
     groupHeading.className = 'filter-group-heading';
     groupHeading.textContent = group.heading;
-    list.appendChild(groupHeading);
+    section.appendChild(groupHeading);
 
     group.filters.forEach(({ key, label, step, decimals }) => {
     const values = monitors.map(m => getVal(m, key));
@@ -1217,11 +1217,12 @@ function buildFilterPanel() {
     slidersDiv.appendChild(maxValueLabel);
     row.appendChild(slidersDiv);
 
-    list.appendChild(row);
+    section.appendChild(row);
     });
+
+    panel.appendChild(section);
   });
 
-  panel.appendChild(list);
   container.appendChild(panel);
 }
 
@@ -1646,10 +1647,9 @@ function updateVisibility() {
 
 // Axis controls
 const AXIS_GROUPS = [
-  { label: 'Resolution', keys: ['w', 'h', 'mp'] },
   { label: 'Physical Size', keys: ['wIn', 'hIn', 'diag', 'area'] },
-  { label: 'Density / Ratio', keys: ['ppi', 'ar'] },
-  { label: 'Other', keys: ['hz'] },
+  { label: 'Resolution', keys: ['w', 'h', 'mp'] },
+  { label: 'Other', keys: ['ppi', 'ar', 'hz'] },
 ];
 
 function buildAxisSelect(selectedKey) {
