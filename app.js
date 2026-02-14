@@ -180,6 +180,8 @@ function positionDots() {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
         dotEls[mi].style.zIndex = '';
+        labelEls[mi].style.left = cx + 'px';
+        labelEls[mi].style.top = cy + 'px';
         labelEls[mi].style.opacity = '0';
         labelEls[mi].style.zIndex = '';
       });
@@ -714,6 +716,28 @@ function destroyClusters() {
   badgeEls = {};
 }
 
+function getExpandedBounds(groupObj) {
+  const indices = groupObj.indices.filter(mi => visibleMonitors.has(mi));
+  if (indices.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+  const cx = indices.reduce((s, i) => s + xPos(getVal(monitors[i], xAxisKey)), 0) / indices.length;
+  const cy = indices.reduce((s, i) => s + yPos(getVal(monitors[i], yAxisKey)), 0) / indices.length;
+  const offsets = fanOffsets(indices.length);
+  let minX = cx, maxX = cx, minY = cy, maxY = cy;
+  indices.forEach((mi, j) => {
+    const x = cx + offsets[j].dx, y = cy + offsets[j].dy;
+    const lw = labelEls[mi].offsetWidth || 70;
+    minX = Math.min(minX, x - 8); maxX = Math.max(maxX, x + 8);
+    minY = Math.min(minY, y - 8); maxY = Math.max(maxY, y + 8);
+    if (offsets[j].dx < -3) {
+      minX = Math.min(minX, x - 8 - lw);
+    } else {
+      maxX = Math.max(maxX, x + 8 + lw);
+    }
+    minY = Math.min(minY, y - 14); maxY = Math.max(maxY, y + 14);
+  });
+  return { minX, maxX, minY, maxY };
+}
+
 function createClusters() {
   Object.entries(groups).forEach(([key, group]) => {
     if (group.indices.length <= 1) return;
@@ -728,6 +752,20 @@ function createClusters() {
         labelEls[mi].classList.add('fan-animate');
       });
       group.expanded = !group.expanded;
+
+      // If expanding, collapse other expanded clusters whose labels would overlap
+      if (group.expanded) {
+        const myBounds = getExpandedBounds(group);
+        Object.entries(groups).forEach(([otherKey, otherGroup]) => {
+          if (otherKey === key || !otherGroup.expanded) return;
+          const otherBounds = getExpandedBounds(otherGroup);
+          if (myBounds.maxX > otherBounds.minX && myBounds.minX < otherBounds.maxX &&
+              myBounds.maxY > otherBounds.minY && myBounds.minY < otherBounds.maxY) {
+            otherGroup.expanded = false;
+          }
+        });
+      }
+
       positionDots();
       // Remove animation class after transition completes
       setTimeout(() => {
