@@ -629,7 +629,8 @@ function createPpiLines() {
 }
 
 function updatePpiLines() {
-  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
+  const isAreaMp = (xAxisKey === 'area' && yAxisKey === 'mp') ||
+                   (xAxisKey === 'mp' && yAxisKey === 'area');
 
   ppiLineEls.forEach(({ line, label, data }, i) => {
     if (!ppiEnabled.has(i) || !isAreaMp) {
@@ -642,8 +643,12 @@ function updatePpiLines() {
     }
 
     label.style.display = '';
-    // MP = area * PPI² / 1e6, so slope = PPI² / 1e6
-    const slope = data.ppi * data.ppi / 1e6;
+    // MP = area * PPI² / 1e6
+    // X=area, Y=mp: slope = PPI²/1e6
+    // X=mp, Y=area: slope = 1e6/PPI²
+    const slope = xAxisKey === 'area'
+      ? data.ppi * data.ppi / 1e6
+      : 1e6 / (data.ppi * data.ppi);
 
     // Line from origin: y = slope * x. Clip to visible range.
     let x1d = xRange.min, y1d = slope * x1d;
@@ -1680,7 +1685,8 @@ function switchAxes(newX, newY) {
 function updateNoteBar() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
   const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
-  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
+  const isAreaMp = (xAxisKey === 'area' && yAxisKey === 'mp') ||
+                   (xAxisKey === 'mp' && yAxisKey === 'area');
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
 
   const noteRatio = document.getElementById('noteRatio');
@@ -1821,7 +1827,8 @@ function updateLabelMargin() {
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
   const hasRatio = ratioEnabled.size > 0;
   const hasMp = mpEnabled.size > 0;
-  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
+  const isAreaMp = (xAxisKey === 'area' && yAxisKey === 'mp') ||
+                   (xAxisKey === 'mp' && yAxisKey === 'area');
   const hasArea = areaEnabled.size > 0;
   const hasPpi = ppiEnabled.size > 0;
   const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea)) || (isAreaMp && hasPpi);
