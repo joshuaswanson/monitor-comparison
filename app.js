@@ -753,11 +753,12 @@ function showTooltipForDot(dot, m) {
   ttName.textContent = m.name;
   ttDetail.innerHTML =
     'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
+    'Megapixels: ' + m.mp.toFixed(1) + ' MP<br>' +
+    'Size: ' + m.wIn.toFixed(1) + '" x ' + m.hIn.toFixed(1) + '"<br>' +
     'Diagonal: ' + m.diag + '"<br>' +
-    'Size: ' + m.wIn.toFixed(1) + '" x ' + m.hIn.toFixed(1) + '" (' + m.area.toFixed(0) + ' in&sup2;)<br>' +
+    'Area: ' + m.area.toFixed(0) + ' in&sup2;<br>' +
     'PPI: ' + m.ppi.toFixed(0) + '<br>' +
-    'Total: ' + m.mp.toFixed(1) + ' MP<br>' +
-    'Aspect: ' + m.ar.toFixed(2) + ' (' + m.w + ':' + m.h + ')';
+    'Aspect Ratio: ' + m.ar.toFixed(2);
 }
 
 function unpinDot() {
