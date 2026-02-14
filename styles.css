@@ -350,11 +350,22 @@ h1 + .outer-wrapper {
 
 /* Footer note */
 .note {
-  margin-top: 18px;
-  font-size: 0.7rem;
-  color: #5a5a6e;
-  max-width: 860px;
-  text-align: center;
-  line-height: 1.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 0.68rem;
+  color: #4a4a5e;
   font-family: 'JetBrains Mono', monospace;
+}
+
+.note-sep {
+  width: 1px;
+  height: 12px;
+  background: #2a2c3a;
+}
+
+.note-item {
+  white-space: nowrap;
 }
