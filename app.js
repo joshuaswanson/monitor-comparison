@@ -609,11 +609,13 @@ function createDots() {
     const dot = document.createElement('div');
     dot.className = 'dot cat-' + m.cat;
 
+    let hoverTimer = null;
     dot.addEventListener('mouseenter', () => {
       if (pinnedDotIndex !== null && pinnedDotIndex !== i) return;
-      showTooltipForDot(dot, m);
+      hoverTimer = setTimeout(() => showTooltipForDot(dot, m), 150);
     });
     dot.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimer);
       if (pinnedDotIndex === i) return;
       tooltip.style.display = 'none';
     });
