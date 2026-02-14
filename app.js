@@ -175,14 +175,14 @@ function positionDots() {
       if (badgeEls[key]) {
         badgeEls[key].style.left = cx + 'px';
         badgeEls[key].style.top = cy + 'px';
-        nonExpandedBadges.push({ el: badgeEls[key], x: cx, y: cy, key });
+        nonExpandedBadges.push({ el: badgeEls[key], x: cx, y: cy, key, indices });
       }
     }
   });
 
-  // Hide non-expanded badges that are too close to any expanded dot
+  // Hide non-expanded badges (and their dots) that are too close to any expanded dot
   const hideThreshold = 35;
-  nonExpandedBadges.forEach(({ el, x, y }) => {
+  nonExpandedBadges.forEach(({ el, x, y, indices }) => {
     let tooClose = false;
     for (const ep of expandedDotPositions) {
       const dx = x - ep.x, dy = y - ep.y;
@@ -193,6 +193,9 @@ function positionDots() {
     }
     el.style.opacity = tooClose ? '0' : '1';
     el.style.pointerEvents = tooClose ? 'none' : '';
+    indices.forEach(mi => {
+      dotEls[mi].style.opacity = tooClose ? '0' : '';
+    });
   });
 
   // Collision avoidance for singleton labels: nudge overlapping labels vertically
