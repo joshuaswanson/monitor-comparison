@@ -271,8 +271,27 @@ function updateRatioLines() {
     line.setAttribute('x2', sx2);
     line.setAttribute('y2', sy2);
 
-    // Position label at 85% across the chart, on the ratio line
-    const labelW = xRange.min + (xRange.max - xRange.min) * 0.85;
+    // Position label where it's furthest from any visible dot
+    const dotPositions = [];
+    monitors.forEach((m, i) => {
+      if (visibleMonitors.has(i)) dotPositions.push({ x: xPos(m.w), y: yPos(m.h) });
+    });
+
+    let bestT = 0.85, bestDist = -1;
+    for (let t = 0.15; t <= 0.9; t += 0.05) {
+      const cw = xRange.min + (xRange.max - xRange.min) * t;
+      const ch = cw / data.r;
+      const cx = xPos(cw), cy = yPos(ch);
+      if (cy < 10 || cy > H - 10) continue;
+      let minDist = Infinity;
+      for (const dp of dotPositions) {
+        const d = Math.hypot(cx - dp.x, cy - dp.y);
+        if (d < minDist) minDist = d;
+      }
+      if (minDist > bestDist) { bestDist = minDist; bestT = t; }
+    }
+
+    const labelW = xRange.min + (xRange.max - xRange.min) * bestT;
     const labelH = labelW / data.r;
     label.style.left = (xPos(labelW) + 8) + 'px';
     label.style.top = (yPos(labelH) - 16) + 'px';
