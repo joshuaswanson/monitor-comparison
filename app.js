@@ -9,7 +9,6 @@ const labelEls = [];
 const badgeEls = {};
 const resLabelEls = {};
 
-let activeCategories = new Set();
 let visibleMonitors = new Set();
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
@@ -314,51 +313,8 @@ function createClusters() {
   });
 }
 
-function buildFilterChips() {
-  const container = document.getElementById('filters');
-  container.innerHTML = '';
-  const wrap = document.createElement('div');
-  wrap.className = 'filter-chips';
-
-  Object.entries(categories).forEach(([key, cat]) => {
-    const chip = document.createElement('div');
-    chip.className = 'filter-chip active';
-    chip.style.borderColor = cat.color;
-    chip.style.color = cat.color;
-
-    const dot = document.createElement('div');
-    dot.className = 'chip-dot';
-    dot.style.background = cat.color;
-    chip.appendChild(dot);
-    chip.appendChild(document.createTextNode(cat.label));
-
-    chip.addEventListener('click', () => {
-      if (activeCategories.has(key)) {
-        activeCategories.delete(key);
-        chip.className = 'filter-chip inactive';
-        monitors.forEach((m, i) => {
-          if (m.cat === key) visibleMonitors.delete(i);
-        });
-      } else {
-        activeCategories.add(key);
-        chip.className = 'filter-chip active';
-        chip.style.borderColor = cat.color;
-        chip.style.color = cat.color;
-        monitors.forEach((m, i) => {
-          if (m.cat === key) visibleMonitors.add(i);
-        });
-      }
-      syncCheckboxes();
-      updateVisibility();
-    });
-
-    wrap.appendChild(chip);
-  });
-
-  container.appendChild(wrap);
-}
-
 const checkboxEls = [];
+const catCheckboxEls = {};
 
 function buildMonitorPanel() {
   const container = document.getElementById('monitorPanel');
@@ -385,8 +341,24 @@ function buildMonitorPanel() {
     const section = document.createElement('div');
     section.className = 'monitor-list-category';
 
-    const title = document.createElement('div');
+    const title = document.createElement('label');
     title.className = 'monitor-list-category-title';
+    const catCb = document.createElement('input');
+    catCb.type = 'checkbox';
+    catCb.checked = true;
+    catCb.addEventListener('change', () => {
+      indices.forEach(i => {
+        if (catCb.checked) {
+          visibleMonitors.add(i);
+        } else {
+          visibleMonitors.delete(i);
+        }
+        if (checkboxEls[i]) checkboxEls[i].checked = catCb.checked;
+      });
+      updateVisibility();
+    });
+    catCheckboxEls[catKey] = catCb;
+    title.appendChild(catCb);
     const catDot = document.createElement('div');
     catDot.className = 'cat-dot';
     catDot.style.background = cat.color;
@@ -430,14 +402,63 @@ function buildMonitorPanel() {
   container.appendChild(panel);
 }
 
-function syncCheckboxes() {
+function updateVisibility() {
+  // Sync category checkbox states
+  const grouped = {};
   monitors.forEach((m, i) => {
-    if (checkboxEls[i]) checkboxEls[i].checked = visibleMonitors.has(i);
+    if (!grouped[m.cat]) grouped[m.cat] = [];
+    grouped[m.cat].push(i);
   });
+  Object.entries(grouped).forEach(([catKey, indices]) => {
+    if (!catCheckboxEls[catKey]) return;
+    const visCount = indices.filter(i => visibleMonitors.has(i)).length;
+    catCheckboxEls[catKey].checked = visCount > 0;
+    catCheckboxEls[catKey].indeterminate = visCount > 0 && visCount < indices.length;
+  });
+
+  // Re-render chart with rescaled axes for visible monitors
+  rerender();
 }
 
-function updateVisibility() {
-  monitors.forEach((m, i) => {
+function rerender() {
+  // Clear chart contents
+  chartArea.innerHTML = '';
+  yLabelsCol.innerHTML = '';
+  // Remove x-axis labels from chart container
+  chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
+
+  // Recompute ranges based on visible monitors only
+  const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
+  if (visMonitors.length === 0) {
+    xRange = { min: 0, max: 8000 };
+    yRange = { min: 0, max: 5000 };
+  } else {
+    xRange = niceRange(visMonitors.map(m => m.w), 0.15);
+    yRange = niceRange(visMonitors.map(m => m.h), 0.15);
+  }
+
+  const rect = chartArea.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  const chartRect = chartContainer.getBoundingClientRect();
+  areaOffsetLeft = rect.left - chartRect.left;
+  areaOffsetTop = rect.top - chartRect.top;
+
+  // Rebuild chart elements
+  dotEls.length = 0;
+  labelEls.length = 0;
+  Object.keys(badgeEls).forEach(k => delete badgeEls[k]);
+  Object.keys(resLabelEls).forEach(k => delete resLabelEls[k]);
+
+  drawGrid();
+  drawMpCurves();
+  drawRatioLines();
+  createDots();
+  createClusters();
+  positionDots();
+
+  // Apply visibility
+  monitors.forEach((_, i) => {
     const show = visibleMonitors.has(i);
     dotEls[i].style.display = show ? '' : 'none';
     labelEls[i].style.display = show ? '' : 'none';
@@ -490,10 +511,8 @@ async function init() {
     groups[key].indices.push(i);
   });
 
-  activeCategories = new Set(Object.keys(categories));
   visibleMonitors = new Set(monitors.map((_, i) => i));
 
-  buildFilterChips();
   buildMonitorPanel();
   buildLegend();
   render();

@@ -245,50 +245,6 @@ h1 + .outer-wrapper {
   flex-shrink: 0;
 }
 
-/* Filter chips */
-.filter-chips {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-.filter-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 14px;
-  border-radius: 20px;
-  border: 1.5px solid;
-  font-size: 0.73rem;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: opacity 0.2s, border-color 0.2s;
-  user-select: none;
-}
-
-.filter-chip .chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.filter-chip.active {
-  opacity: 1;
-}
-
-.filter-chip.inactive {
-  border-color: #3a3c52;
-  color: #5a5a6e;
-  opacity: 0.5;
-}
-
-.filter-chip.inactive .chip-dot {
-  opacity: 0.4;
-}
-
 /* Monitor panel */
 .monitor-panel {
   margin-top: 8px;
@@ -335,6 +291,13 @@ h1 + .outer-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.monitor-list-category-title input[type="checkbox"] {
+  accent-color: #7a7a8e;
+  cursor: pointer;
 }
 
 .monitor-list-category-title .cat-dot {
