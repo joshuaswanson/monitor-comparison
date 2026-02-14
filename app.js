@@ -83,10 +83,10 @@ function computeLayout() {
   measureChart();
 }
 
-function fanOffsets(n) {
+function fanOffsets(n, startAngle) {
   const radius = 18;
   const offsets = [];
-  const startAngle = -Math.PI / 2;
+  if (startAngle === undefined) startAngle = -Math.PI / 2;
   for (let i = 0; i < n; i++) {
     const angle = startAngle + (2 * Math.PI / n) * i;
     offsets.push({ dx: Math.cos(angle) * radius, dy: Math.sin(angle) * radius });
@@ -95,18 +95,23 @@ function fanOffsets(n) {
 }
 
 function positionDots() {
-  // Collect singleton label positions for collision avoidance
   const singletonLabels = [];
-  // Collect expanded dot positions to check against non-expanded badges
   const expandedDotPositions = [];
-  // Track non-expanded badges for hiding when near expanded clusters
   const nonExpandedBadges = [];
 
+  // Pass 1: compute all group centroids
+  const groupCentroids = {};
   Object.entries(groups).forEach(([key, group]) => {
     const indices = group.indices;
-    // Use centroid of group for cluster position
     const cx = indices.reduce((s, i) => s + xPos(getVal(monitors[i], xAxisKey)), 0) / indices.length;
     const cy = indices.reduce((s, i) => s + yPos(getVal(monitors[i], yAxisKey)), 0) / indices.length;
+    groupCentroids[key] = { cx, cy };
+  });
+
+  // Pass 2: position everything
+  Object.entries(groups).forEach(([key, group]) => {
+    const indices = group.indices;
+    const { cx, cy } = groupCentroids[key];
 
     if (indices.length === 1) {
       const i = indices[0];
@@ -152,7 +157,6 @@ function positionDots() {
 
         expandedDotPositions.push({ x, y });
       });
-      // Also include the centroid itself
       expandedDotPositions.push({ x: cx, y: cy });
       // Hidden dots in this group still go to centroid
       indices.filter(mi => !visibleMonitors.has(mi)).forEach(mi => {
@@ -922,17 +926,22 @@ function updateVisibility() {
     catCheckboxEls[catKey].indeterminate = visCount > 0 && visCount < indices.length;
   });
 
-  // Animate dots in expanded clusters to their new fan positions
+  // Animate dots in expanded clusters only if that group's visible count changed
   const animatingDots = [];
   Object.values(groups).forEach(group => {
     if (!group.expanded || group.indices.length <= 1) return;
-    group.indices.forEach(mi => {
-      if (visibleMonitors.has(mi)) {
-        dotEls[mi].classList.add('fan-animate');
-        labelEls[mi].classList.add('fan-animate');
-        animatingDots.push(mi);
-      }
-    });
+    const newVisCount = group.indices.filter(mi => visibleMonitors.has(mi)).length;
+    const oldVisCount = group._lastVisCount;
+    group._lastVisCount = newVisCount;
+    if (oldVisCount !== undefined && oldVisCount !== newVisCount) {
+      group.indices.forEach(mi => {
+        if (visibleMonitors.has(mi)) {
+          dotEls[mi].classList.add('fan-animate');
+          labelEls[mi].classList.add('fan-animate');
+          animatingDots.push(mi);
+        }
+      });
+    }
   });
   if (animatingDots.length > 0) {
     setTimeout(() => {
