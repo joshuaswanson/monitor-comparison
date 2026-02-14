@@ -588,12 +588,26 @@ function rerender() {
   animationId = requestAnimationFrame(tick);
 }
 
+function measureLabelMargin() {
+  let maxW = 0;
+  ratioLineEls.forEach(({ label }) => {
+    maxW = Math.max(maxW, label.offsetWidth);
+  });
+  mpCurveEls.forEach(({ label }) => {
+    maxW = Math.max(maxW, label.offsetWidth);
+  });
+  // 6px gap + label width + 8px breathing room
+  chartArea.style.right = (maxW + 14) + 'px';
+  measureChart();
+}
+
 function render() {
   computeLayout();
-  drawGrid();
   createRefSvg();
   createRatioLines();
   createMpCurves();
+  measureLabelMargin();
+  drawGrid();
   updateRatioLines();
   updateMpCurves();
   createDots();
