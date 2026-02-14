@@ -23,14 +23,22 @@
     { "name": "LG 34WQ650-W 34\"", "w": 2560, "h": 1080, "diag": 34, "cat": "ultrawide-entry", "shortName": "LG 34\" 1080p" }
   ],
   "ratioLines": [
-    { "name": "16:9", "r": 1.7778, "color": "#8888aa" },
-    { "name": "21:9", "r": 2.3333, "color": "#34d399" },
-    { "name": "32:9", "r": 3.5556, "color": "#fb923c" }
+    { "name": "4:3",   "r": 1.3333, "color": "#7788aa", "default": false },
+    { "name": "3:2",   "r": 1.5,    "color": "#88aa88", "default": false },
+    { "name": "16:10", "r": 1.6,    "color": "#aaaa77", "default": false },
+    { "name": "16:9",  "r": 1.7778, "color": "#8888aa", "default": true },
+    { "name": "21:9",  "r": 2.3333, "color": "#34d399", "default": true },
+    { "name": "32:10", "r": 3.2,    "color": "#aa7788", "default": false },
+    { "name": "32:9",  "r": 3.5556, "color": "#fb923c", "default": true }
   ],
   "mpCurves": [
-    { "name": "~11.1 MP", "w": 5120, "h": 2160, "color": "#34d399" },
-    { "name": "~14.7 MP", "w": 5120, "h": 2880, "color": "#a78bfa" },
-    { "name": "~20.4 MP", "w": 6016, "h": 3384, "color": "#a78bfa" }
+    { "name": "~2.1 MP (FHD)",  "w": 1920, "h": 1080, "color": "#7a9a9a", "default": false },
+    { "name": "~3.7 MP (QHD)",  "w": 2560, "h": 1440, "color": "#9a7a9a", "default": false },
+    { "name": "~8.3 MP (4K)",   "w": 3840, "h": 2160, "color": "#9a9a7a", "default": false },
+    { "name": "~11.1 MP",       "w": 5120, "h": 2160, "color": "#34d399", "default": true },
+    { "name": "~14.7 MP (5K)",  "w": 5120, "h": 2880, "color": "#a78bfa", "default": true },
+    { "name": "~20.4 MP",       "w": 6016, "h": 3384, "color": "#a78bfa", "default": true },
+    { "name": "~33.2 MP (8K)",  "w": 7680, "h": 4320, "color": "#e879f9", "default": false }
   ],
   "categories": {
     "macbook":         { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
