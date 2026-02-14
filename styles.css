@@ -189,7 +189,7 @@ h1 + .outer-wrapper {
 
 .curve-label {
   position: absolute;
-  font-size: 0.54rem;
+  font-size: 0.68rem;
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
   pointer-events: none;
