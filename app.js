@@ -291,10 +291,15 @@ function updateRatioLines() {
       if (minDist > bestDist) { bestDist = minDist; bestT = t; }
     }
 
+    // Offset label perpendicular to the line
     const labelW = xRange.min + (xRange.max - xRange.min) * bestT;
     const labelH = labelW / data.r;
-    label.style.left = (xPos(labelW) + 8) + 'px';
-    label.style.top = (yPos(labelH) - 16) + 'px';
+    const dx = sx2 - sx1, dy = sy2 - sy1;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    const offset = 12;
+    label.style.left = (xPos(labelW) + nx * offset) + 'px';
+    label.style.top = (yPos(labelH) + ny * offset - 8) + 'px';
   });
 }
 
