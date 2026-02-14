@@ -21,11 +21,8 @@ h1 {
   color: #f0f0f5;
 }
 
-.subtitle {
-  font-size: 0.85rem;
-  color: #7a7a8e;
-  margin-bottom: 28px;
-  font-family: 'JetBrains Mono', monospace;
+h1 + .outer-wrapper {
+  margin-top: 28px;
 }
 
 /* Layout */
@@ -254,7 +251,7 @@ h1 {
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-top: 18px;
 }
 
 .filter-chip {
@@ -294,7 +291,7 @@ h1 {
 
 /* Monitor panel */
 .monitor-panel {
-  margin-bottom: 18px;
+  margin-top: 8px;
   text-align: center;
 }
 
