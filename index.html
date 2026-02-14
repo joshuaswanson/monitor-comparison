@@ -10,14 +10,16 @@
 
 <h1>Monitor Resolution Landscape</h1>
 
+<div class="axis-controls" id="axisControls"></div>
+
 <div class="outer-wrapper">
-  <div class="y-axis-title">Vertical Pixels &#8594;</div>
+  <div class="y-axis-title" id="yAxisTitle">Vertical Pixels &#8594;</div>
   <div class="y-labels-col" id="yLabelsCol"></div>
   <div class="chart-and-x">
     <div class="chart-container" id="chart">
       <div class="chart-area" id="chartArea"></div>
     </div>
-    <div class="x-axis-title">Horizontal Pixels &#8594;</div>
+    <div class="x-axis-title" id="xAxisTitle">Horizontal Pixels &#8594;</div>
   </div>
 </div>
 
@@ -28,15 +30,16 @@
 
 <div class="legend" id="legend"></div>
 
-<div class="note">
-  <span class="note-item">--- diagonal = aspect ratio</span>
-  <span class="note-sep"></span>
-  <span class="note-item">~~~ curve = same megapixels</span>
-  <span class="note-sep"></span>
+<div class="note" id="noteBar">
+  <span class="note-item" id="noteRatio">--- diagonal = aspect ratio</span>
+  <span class="note-sep" id="noteSep1"></span>
+  <span class="note-item" id="noteMp">~~~ curve = same megapixels</span>
+  <span class="note-sep" id="noteSep2"></span>
   <span class="note-item">click badges to fan out clusters</span>
 </div>
 
 <div id="monitorPanel"></div>
+<div id="filterPanel"></div>
 
 <script src="app.js"></script>
 </body>
