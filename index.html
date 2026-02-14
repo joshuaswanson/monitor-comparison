@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitor Resolution Landscape</title>
+<title>Monitor Comparison</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Monitor Resolution Landscape</h1>
+<h1>Monitor Comparison</h1>
 
 <div class="axis-controls" id="axisControls"></div>
 
@@ -38,8 +38,14 @@
   <span class="note-item">click badges to fan out clusters</span>
 </div>
 
-<div id="monitorPanel"></div>
-<div id="filterPanel"></div>
+<div class="panels-row">
+  <div id="monitorPanel"></div>
+  <div id="filterPanel"></div>
+</div>
+<div class="panels-row">
+  <div id="ratioPanel"></div>
+  <div id="mpPanel"></div>
+</div>
 
 <script src="app.js"></script>
 </body>
