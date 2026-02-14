@@ -272,8 +272,8 @@ function updateRatioLines() {
     line.setAttribute('x2', sx2);
     line.setAttribute('y2', sy2);
 
-    // Position label at a fixed point along the line (in data space)
-    const labelW = x1d + (x2d - x1d) * 0.88;
+    // Position label at 85% across the chart, on the ratio line
+    const labelW = xRange.min + (xRange.max - xRange.min) * 0.85;
     const labelH = labelW / data.r;
     label.style.left = (xPos(labelW) + 8) + 'px';
     label.style.top = (yPos(labelH) - 16) + 'px';
