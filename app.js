@@ -24,6 +24,7 @@ const AXES = {
   ar:   { label: 'Aspect Ratio',      format: v => v.toFixed(2) },
   diag: { label: 'Diagonal (in)',     format: v => v.toFixed(1) },
   mp:   { label: 'Megapixels',        format: v => v.toFixed(1) },
+  area: { label: 'Screen Area (in²)', format: v => v.toFixed(0) },
 };
 
 function getVal(m, key) { return m[key]; }
@@ -204,18 +205,67 @@ function positionDots() {
     });
   });
 
-  // Collision avoidance for singleton labels: nudge overlapping labels vertically
+  // Collect all visible dot positions for collision checks
+  const allDotPositions = [];
+  monitors.forEach((_, i) => {
+    if (!visibleMonitors.has(i)) return;
+    allDotPositions.push({
+      x: parseFloat(dotEls[i].style.left),
+      y: parseFloat(dotEls[i].style.top),
+      idx: i
+    });
+  });
+
+  // Collision avoidance for singleton labels: nudge away from other dots and labels
   const labelHeight = 11;
+  const labelWidth = 70;
+  const dotR = 7;
+
   // Sort by vertical position so we nudge downward predictably
   singletonLabels.sort((a, b) => a.ly - b.ly);
+
+  // Label-label collision avoidance
   for (let i = 1; i < singletonLabels.length; i++) {
     const prev = singletonLabels[i - 1];
     const curr = singletonLabels[i];
-    // Only nudge if labels are horizontally close (within ~120px)
     if (Math.abs(curr.lx - prev.lx) < 120 && curr.ly - prev.ly < labelHeight) {
       curr.ly = prev.ly + labelHeight;
     }
   }
+
+  // Label-dot collision avoidance: try nearby positions, keep closest that's clear
+  function labelHitsDot(lx, ly, alignR, ownIdx) {
+    const lLeft = alignR ? lx - labelWidth : lx;
+    const lRight = lLeft + labelWidth;
+    for (const dp of allDotPositions) {
+      if (dp.idx === ownIdx) continue;
+      if (lRight > dp.x - dotR && lLeft < dp.x + dotR &&
+          ly + labelHeight > dp.y - dotR && ly < dp.y + dotR) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  singletonLabels.forEach(sl => {
+    if (!labelHitsDot(sl.lx, sl.ly, sl.alignRight, sl.idx)) return;
+    // Try alternative positions near the dot
+    const candidates = [
+      { lx: sl.cx + 10, ly: sl.cy - 14, alignRight: false },   // above-right
+      { lx: sl.cx + 10, ly: sl.cy + 10, alignRight: false },   // below-right
+      { lx: sl.cx - 10, ly: sl.cy - 4,  alignRight: true },    // left
+      { lx: sl.cx - 10, ly: sl.cy - 14, alignRight: true },    // above-left
+      { lx: sl.cx - 10, ly: sl.cy + 10, alignRight: true },    // below-left
+    ];
+    for (const c of candidates) {
+      if (!labelHitsDot(c.lx, c.ly, c.alignRight, sl.idx)) {
+        sl.lx = c.lx;
+        sl.ly = c.ly;
+        sl.alignRight = c.alignRight;
+        return;
+      }
+    }
+  });
 
   // Apply final positions
   singletonLabels.forEach(({ idx, lx, ly, alignRight }) => {
@@ -524,6 +574,7 @@ function showTooltipForDot(dot, m) {
   ttDetail.innerHTML =
     'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
     'Diagonal: ' + m.diag + '"<br>' +
+    'Area: ' + m.area.toFixed(0) + ' in&sup2;<br>' +
     'PPI: ' + m.ppi.toFixed(0) + '<br>' +
     'Total: ' + m.mp.toFixed(1) + ' MP<br>' +
     'Aspect: ' + m.ar.toFixed(2) + ' (' + m.w + ':' + m.h + ')';
@@ -810,6 +861,7 @@ function buildFilterPanel() {
     { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
     { key: 'diag', label: 'Diagonal (in)',      step: 0.1,  decimals: 1 },
     { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
+    { key: 'area', label: 'Screen Area (in²)', step: 1,    decimals: 0 },
   ];
 
   filterDefs.forEach(({ key, label, step, decimals }) => {
@@ -1395,6 +1447,7 @@ async function init() {
   monitors.forEach(m => {
     m.ppi = Math.sqrt(m.w * m.w + m.h * m.h) / m.diag;
     m.mp = (m.w * m.h) / 1e6;
+    m.area = m.diag * m.diag * (m.w * m.h) / (m.w * m.w + m.h * m.h);
     m.ar = m.w / m.h;
   });
 
