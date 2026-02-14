@@ -957,9 +957,18 @@ function buildRatioPanel() {
   const list = document.createElement('div');
   list.className = 'ref-list';
 
+  const allLabel = document.createElement('label');
+  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  allCb.checked = ratioEnabled.size > 0;
+  allCb.indeterminate = ratioEnabled.size > 0 && ratioEnabled.size < ratioLines.length;
+  list.appendChild(allLabel);
+
   const items = document.createElement('div');
   items.className = 'ref-list-items narrow';
 
+  const ratioCbs = [];
   ratioLines.forEach((rl, i) => {
     const label = document.createElement('label');
     label.className = 'monitor-checkbox-label';
@@ -972,9 +981,13 @@ function buildRatioPanel() {
       } else {
         ratioEnabled.delete(i);
       }
+      allCb.checked = ratioEnabled.size > 0;
+      allCb.indeterminate = ratioEnabled.size > 0 && ratioEnabled.size < ratioLines.length;
+      updateLabelMargin();
       updateRatioLines();
       avoidRefLabelOverlap();
     });
+    ratioCbs.push(cb);
     label.appendChild(cb);
     const dot = document.createElement('div');
     dot.className = 'cat-dot';
@@ -983,6 +996,23 @@ function buildRatioPanel() {
     label.appendChild(document.createTextNode(rl.name));
     items.appendChild(label);
   });
+
+  allCb.addEventListener('change', () => {
+    ratioLines.forEach((_, i) => {
+      if (allCb.checked) {
+        ratioEnabled.add(i);
+      } else {
+        ratioEnabled.delete(i);
+      }
+      ratioCbs[i].checked = allCb.checked;
+    });
+    allCb.indeterminate = false;
+    updateLabelMargin();
+    updateRatioLines();
+    avoidRefLabelOverlap();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode('all'));
 
   list.appendChild(items);
 
@@ -1010,9 +1040,18 @@ function buildMpPanel() {
   const list = document.createElement('div');
   list.className = 'ref-list';
 
+  const allLabel = document.createElement('label');
+  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  allCb.checked = mpEnabled.size > 0;
+  allCb.indeterminate = mpEnabled.size > 0 && mpEnabled.size < mpCurves.length;
+  list.appendChild(allLabel);
+
   const items = document.createElement('div');
   items.className = 'ref-list-items';
 
+  const mpCbs = [];
   mpCurves.forEach((mc, i) => {
     const label = document.createElement('label');
     label.className = 'monitor-checkbox-label';
@@ -1025,9 +1064,13 @@ function buildMpPanel() {
       } else {
         mpEnabled.delete(i);
       }
+      allCb.checked = mpEnabled.size > 0;
+      allCb.indeterminate = mpEnabled.size > 0 && mpEnabled.size < mpCurves.length;
+      updateLabelMargin();
       updateMpCurves();
       avoidRefLabelOverlap();
     });
+    mpCbs.push(cb);
     label.appendChild(cb);
     const dot = document.createElement('div');
     dot.className = 'cat-dot';
@@ -1036,6 +1079,23 @@ function buildMpPanel() {
     label.appendChild(document.createTextNode(mc.name));
     items.appendChild(label);
   });
+
+  allCb.addEventListener('change', () => {
+    mpCurves.forEach((_, i) => {
+      if (allCb.checked) {
+        mpEnabled.add(i);
+      } else {
+        mpEnabled.delete(i);
+      }
+      mpCbs[i].checked = allCb.checked;
+    });
+    allCb.indeterminate = false;
+    updateLabelMargin();
+    updateMpCurves();
+    avoidRefLabelOverlap();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode('all'));
 
   list.appendChild(items);
 
@@ -1173,8 +1233,9 @@ function switchAxes(newX, newY) {
   groups = buildGroups();
   createClusters();
 
-  // Update note text based on axis mode
+  // Update note text and label margin based on axis mode
   updateNoteBar();
+  updateLabelMargin();
 
   rerender();
 }
@@ -1281,6 +1342,8 @@ function rerender() {
   animationId = requestAnimationFrame(tick);
 }
 
+let labelMarginRight = 20;
+
 function measureLabelMargin() {
   let maxW = 0;
   ratioLineEls.forEach(({ label }) => {
@@ -1289,7 +1352,18 @@ function measureLabelMargin() {
   mpCurveEls.forEach(({ label }) => {
     maxW = Math.max(maxW, label.offsetWidth);
   });
-  chartArea.style.right = (maxW + 14) + 'px';
+  labelMarginRight = maxW + 14;
+  chartArea.style.right = labelMarginRight + 'px';
+  measureChart();
+}
+
+function updateLabelMargin() {
+  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
+  const hasRatio = ratioEnabled.size > 0;
+  const hasMp = mpEnabled.size > 0;
+  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio);
+  chartArea.style.right = needsMargin ? labelMarginRight + 'px' : '20px';
   measureChart();
 }
 
