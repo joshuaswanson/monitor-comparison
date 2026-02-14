@@ -191,6 +191,7 @@ h1 + .axis-controls {
               opacity 0.25s ease;
 }
 
+.dot.cat-joshua-monitor  { background: #f472b6; box-shadow: 0 0 10px #f472b666; }
 .dot.cat-macbook         { background: #f5a623; box-shadow: 0 0 10px #f5a62366; }
 .dot.cat-apple-ext       { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
 .dot.cat-ultrawide-high  { background: #34d399; box-shadow: 0 0 10px #34d39966; }
