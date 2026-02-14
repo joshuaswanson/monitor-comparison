@@ -3,15 +3,31 @@ let categories = {};
 let ratioLines = [];
 let mpCurves = [];
 
-const groups = {};
+let groups = {};
 const dotEls = [];
 const labelEls = [];
-const badgeEls = {};
-const resLabelEls = {};
+let badgeEls = {};
 
 let visibleMonitors = new Set();
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
+
+// Axis switching state
+let xAxisKey = 'w', yAxisKey = 'h';
+
+const AXES = {
+  w:    { label: 'Horizontal Pixels', format: v => v.toFixed(0) },
+  h:    { label: 'Vertical Pixels',   format: v => v.toFixed(0) },
+  ppi:  { label: 'PPI',               format: v => v.toFixed(0) },
+  ar:   { label: 'Aspect Ratio',      format: v => v.toFixed(2) },
+  diag: { label: 'Diagonal (in)',     format: v => v.toFixed(1) },
+  mp:   { label: 'Megapixels',        format: v => v.toFixed(1) },
+};
+
+function getVal(m, key) { return m[key]; }
+
+// Filter state
+const filters = {};
 
 const chartArea = document.getElementById('chartArea');
 const chartContainer = document.getElementById('chart');
@@ -22,8 +38,8 @@ const ttDetail = document.getElementById('ttDetail');
 const legendContainer = document.getElementById('legend');
 
 // Persistent SVG elements for reference lines
-const ratioLineEls = [];   // { line, label }
-const mpCurveEls = [];     // { path }
+const ratioLineEls = [];
+const mpCurveEls = [];
 let refSvg = null;
 let gridLayer = null;
 
@@ -60,8 +76,10 @@ function measureChart() {
 }
 
 function computeLayout() {
-  xRange = niceRange(monitors.map(m => m.w), 0.15);
-  yRange = niceRange(monitors.map(m => m.h), 0.15);
+  const vis = monitors.filter((_, i) => visibleMonitors.has(i));
+  const src = vis.length > 0 ? vis : monitors;
+  xRange = niceRange(src.map(m => getVal(m, xAxisKey)), 0.15);
+  yRange = niceRange(src.map(m => getVal(m, yAxisKey)), 0.15);
   measureChart();
 }
 
@@ -77,11 +95,14 @@ function fanOffsets(n) {
 }
 
 function positionDots() {
+  // Collect singleton label positions for collision avoidance
+  const singletonLabels = [];
+
   Object.entries(groups).forEach(([key, group]) => {
     const indices = group.indices;
-    const m0 = monitors[indices[0]];
-    const cx = xPos(m0.w);
-    const cy = yPos(m0.h);
+    // Use centroid of group for cluster position
+    const cx = indices.reduce((s, i) => s + xPos(getVal(monitors[i], xAxisKey)), 0) / indices.length;
+    const cy = indices.reduce((s, i) => s + yPos(getVal(monitors[i], yAxisKey)), 0) / indices.length;
 
     if (indices.length === 1) {
       const i = indices[0];
@@ -90,13 +111,14 @@ function positionDots() {
       labelEls[i].style.opacity = '1';
 
       let lx = cx + 10, ly = cy - 4;
+      let alignRight = false;
       if (cx > W * 0.85) {
-        labelEls[i].style.transform = 'translateX(-100%)';
+        alignRight = true;
         lx = cx - 10;
       }
       if (cy < H * 0.1) ly = cy + 10;
-      labelEls[i].style.left = lx + 'px';
-      labelEls[i].style.top = ly + 'px';
+
+      singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
     } else if (group.expanded) {
       const offsets = fanOffsets(indices.length);
       indices.forEach((mi, j) => {
@@ -126,11 +148,6 @@ function positionDots() {
         badgeEls[key].style.top = cy + 'px';
         badgeEls[key].style.opacity = '0.4';
       }
-      if (resLabelEls[key]) {
-        resLabelEls[key].style.left = cx + 'px';
-        resLabelEls[key].style.top = (cy + 20) + 'px';
-        resLabelEls[key].style.opacity = '1';
-      }
     } else {
       indices.forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
@@ -142,12 +159,27 @@ function positionDots() {
         badgeEls[key].style.top = cy + 'px';
         badgeEls[key].style.opacity = '1';
       }
-      if (resLabelEls[key]) {
-        resLabelEls[key].style.left = cx + 'px';
-        resLabelEls[key].style.top = (cy + 20) + 'px';
-        resLabelEls[key].style.opacity = '1';
-      }
     }
+  });
+
+  // Collision avoidance for singleton labels: nudge overlapping labels vertically
+  const labelHeight = 11;
+  // Sort by vertical position so we nudge downward predictably
+  singletonLabels.sort((a, b) => a.ly - b.ly);
+  for (let i = 1; i < singletonLabels.length; i++) {
+    const prev = singletonLabels[i - 1];
+    const curr = singletonLabels[i];
+    // Only nudge if labels are horizontally close (within ~120px)
+    if (Math.abs(curr.lx - prev.lx) < 120 && curr.ly - prev.ly < labelHeight) {
+      curr.ly = prev.ly + labelHeight;
+    }
+  }
+
+  // Apply final positions
+  singletonLabels.forEach(({ idx, lx, ly, alignRight }) => {
+    labelEls[idx].style.transform = alignRight ? 'translateX(-100%)' : '';
+    labelEls[idx].style.left = lx + 'px';
+    labelEls[idx].style.top = ly + 'px';
   });
 }
 
@@ -156,7 +188,7 @@ function sortedCategories() {
   monitors.forEach((m, i) => {
     if (!grouped[m.cat]) grouped[m.cat] = { indices: [], totalMp: 0 };
     grouped[m.cat].indices.push(i);
-    grouped[m.cat].totalMp += m.megapixels;
+    grouped[m.cat].totalMp += m.mp;
   });
   return Object.entries(grouped)
     .map(([key, g]) => ({ key, avgMp: g.totalMp / g.indices.length, indices: g.indices }))
@@ -187,6 +219,9 @@ function drawGrid() {
   yLabelsCol.innerHTML = '';
   chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
 
+  const yFmt = AXES[yAxisKey].format;
+  const xFmt = AXES[xAxisKey].format;
+
   niceTicks(yRange.min, yRange.max, 7).forEach(v => {
     const y = yPos(v);
     if (y < -5 || y > H + 5) return;
@@ -197,7 +232,7 @@ function drawGrid() {
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-y';
     lbl.style.top = (areaOffsetTop + y) + 'px';
-    lbl.textContent = v.toFixed(0);
+    lbl.textContent = yFmt(v);
     yLabelsCol.appendChild(lbl);
   });
 
@@ -211,7 +246,7 @@ function drawGrid() {
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-x';
     lbl.style.left = (areaOffsetLeft + x) + 'px';
-    lbl.textContent = v.toFixed(0);
+    lbl.textContent = xFmt(v);
     chartContainer.appendChild(lbl);
   });
 }
@@ -242,38 +277,101 @@ function createRatioLines() {
   });
 }
 
+// Check if any visible monitor matches a given aspect ratio (within tolerance)
+function isRatioVisible(r) {
+  const tol = 0.1;
+  return monitors.some((m, i) => visibleMonitors.has(i) && Math.abs(m.ar - r) < tol);
+}
+
 function updateRatioLines() {
+  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const xIsAr = xAxisKey === 'ar';
+  const yIsAr = yAxisKey === 'ar';
+
   ratioLineEls.forEach(({ line, label, data }) => {
-    // Compute clipped endpoints in data space
-    // Line: y = x / r  (in data coords, h = w / r)
-    // Find where it enters and exits the visible range
-    const wAtHmin = data.r * yRange.min;
-    const wAtHmax = data.r * yRange.max;
-    const hAtWmin = xRange.min / data.r;
-    const hAtWmax = xRange.max / data.r;
+    // Hide ratio line if no visible monitors have this ratio
+    const ratioHasVisibleMonitor = isRatioVisible(data.r);
 
-    let x1d = Math.max(xRange.min, wAtHmin);
-    let y1d = x1d / data.r;
-    let x2d = Math.min(xRange.max, wAtHmax);
-    let y2d = x2d / data.r;
+    if (!ratioHasVisibleMonitor || (!isWH && !xIsAr && !yIsAr)) {
+      // Hide: move offscreen
+      line.setAttribute('x1', -100);
+      line.setAttribute('y1', -100);
+      line.setAttribute('x2', -100);
+      line.setAttribute('y2', -100);
+      label.style.display = 'none';
+      return;
+    }
 
-    // Clamp to chart bounds
-    if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d * data.r; }
-    if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d * data.r; }
-    if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d * data.r; }
-    if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d * data.r; }
+    label.style.display = '';
 
-    const sx1 = xPos(x1d), sy1 = yPos(y1d);
-    const sx2 = xPos(x2d), sy2 = yPos(y2d);
+    if (isWH) {
+      // Original diagonal clipping math
+      const wAtHmin = data.r * yRange.min;
+      const wAtHmax = data.r * yRange.max;
 
-    line.setAttribute('x1', sx1);
-    line.setAttribute('y1', sy1);
-    line.setAttribute('x2', sx2);
-    line.setAttribute('y2', sy2);
+      let x1d = Math.max(xRange.min, wAtHmin);
+      let y1d = x1d / data.r;
+      let x2d = Math.min(xRange.max, wAtHmax);
+      let y2d = x2d / data.r;
 
-    // Place label at the right edge where the line exits the chart
-    label.style.left = (sx2 + 6) + 'px';
-    label.style.top = (sy2 - 6) + 'px';
+      if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d * data.r; }
+      if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d * data.r; }
+      if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d * data.r; }
+      if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d * data.r; }
+
+      const sx1 = xPos(x1d), sy1 = yPos(y1d);
+      const sx2 = xPos(x2d), sy2 = yPos(y2d);
+
+      line.setAttribute('x1', sx1);
+      line.setAttribute('y1', sy1);
+      line.setAttribute('x2', sx2);
+      line.setAttribute('y2', sy2);
+
+      // Label positioning: check if line exits at top edge vs right edge
+      const atTopEdge = sy2 <= 2;
+      const atRightEdge = sx2 >= W - 2;
+      if (atTopEdge && !atRightEdge) {
+        label.style.left = (sx2 - 6) + 'px';
+        label.style.top = (sy2 - 18) + 'px';
+      } else {
+        label.style.left = (sx2 + 6) + 'px';
+        label.style.top = (sy2 - 6) + 'px';
+      }
+    } else if (xIsAr) {
+      // Vertical line at x = ratio value
+      const sx = xPos(data.r);
+      if (sx < 0 || sx > W) {
+        line.setAttribute('x1', -100);
+        line.setAttribute('y1', -100);
+        line.setAttribute('x2', -100);
+        line.setAttribute('y2', -100);
+        label.style.display = 'none';
+        return;
+      }
+      line.setAttribute('x1', sx);
+      line.setAttribute('y1', 0);
+      line.setAttribute('x2', sx);
+      line.setAttribute('y2', H);
+      label.style.left = (sx + 6) + 'px';
+      label.style.top = '2px';
+    } else if (yIsAr) {
+      // Horizontal line at y = ratio value
+      const sy = yPos(data.r);
+      if (sy < 0 || sy > H) {
+        line.setAttribute('x1', -100);
+        line.setAttribute('y1', -100);
+        line.setAttribute('x2', -100);
+        line.setAttribute('y2', -100);
+        label.style.display = 'none';
+        return;
+      }
+      line.setAttribute('x1', 0);
+      line.setAttribute('y1', sy);
+      line.setAttribute('x2', W);
+      line.setAttribute('y2', sy);
+      label.style.left = (W + 6) + 'px';
+      label.style.top = (sy - 6) + 'px';
+    }
   });
 }
 
@@ -299,7 +397,17 @@ function createMpCurves() {
 }
 
 function updateMpCurves() {
+  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+
   mpCurveEls.forEach(({ path, label, data }) => {
+    if (!isWH) {
+      // Hide when not in W/H mode
+      path.setAttribute('d', 'M -100 -100');
+      label.style.display = 'none';
+      return;
+    }
+
+    label.style.display = '';
     const k = data.w * data.h;
     const pts = [];
     let lastVisible = null;
@@ -320,11 +428,80 @@ function updateMpCurves() {
     }
     path.setAttribute('d', d);
 
-    // Position label at right edge where curve exits
+    // Position label: check if curve exits at top edge vs right edge
     const ep = lastVisible || pts[pts.length - 1];
-    label.style.left = (ep.sx + 6) + 'px';
-    label.style.top = (ep.sy - 6) + 'px';
+    const atTopEdge = ep.sy <= 2;
+    const atRightEdge = ep.sx >= W - 2;
+    if (atTopEdge && !atRightEdge) {
+      label.style.left = (ep.sx - 6) + 'px';
+      label.style.top = (ep.sy - 18) + 'px';
+    } else {
+      label.style.left = (ep.sx + 6) + 'px';
+      label.style.top = (ep.sy - 6) + 'px';
+    }
   });
+}
+
+// Nudge reference line/curve labels so they don't overlap
+function avoidRefLabelOverlap() {
+  const refLabels = [];
+
+  ratioLineEls.forEach(({ label }) => {
+    if (label.style.display === 'none') return;
+    const top = parseFloat(label.style.top);
+    const left = parseFloat(label.style.left);
+    if (isNaN(top) || isNaN(left)) return;
+    refLabels.push({ el: label, top, left });
+  });
+
+  mpCurveEls.forEach(({ label }) => {
+    if (label.style.display === 'none') return;
+    const top = parseFloat(label.style.top);
+    const left = parseFloat(label.style.left);
+    if (isNaN(top) || isNaN(left)) return;
+    refLabels.push({ el: label, top, left });
+  });
+
+  // Sort by vertical position (top value)
+  refLabels.sort((a, b) => a.top - b.top);
+
+  const minGap = 14;
+  for (let i = 1; i < refLabels.length; i++) {
+    const prev = refLabels[i - 1];
+    const curr = refLabels[i];
+    // Only nudge if horizontally close (both near same edge)
+    if (Math.abs(curr.left - prev.left) < 60 && curr.top - prev.top < minGap) {
+      curr.top = prev.top + minGap;
+      curr.el.style.top = curr.top + 'px';
+    }
+  }
+}
+
+let pinnedDotIndex = null;
+
+function showTooltipForDot(dot, m) {
+  tooltip.style.display = 'block';
+  const db = dot.getBoundingClientRect();
+  let tx = db.right + 12, ty = db.top - 20;
+  if (tx + 260 > window.innerWidth) tx = db.left - 260;
+  if (ty < 10) ty = 10;
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+  ttName.textContent = m.name;
+  ttDetail.innerHTML =
+    'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
+    'Diagonal: ' + m.diag + '"<br>' +
+    'PPI: ' + m.ppi.toFixed(0) + '<br>' +
+    'Total: ' + m.mp.toFixed(1) + ' MP<br>' +
+    'Aspect: ' + m.ar.toFixed(2) + ' (' + m.w + ':' + m.h + ')';
+}
+
+function unpinDot() {
+  if (pinnedDotIndex !== null) {
+    dotEls[pinnedDotIndex].classList.remove('pinned');
+    pinnedDotIndex = null;
+    tooltip.style.display = 'none';
+  }
 }
 
 function createDots() {
@@ -333,23 +510,27 @@ function createDots() {
     dot.className = 'dot cat-' + m.cat;
 
     dot.addEventListener('mouseenter', () => {
-      tooltip.style.display = 'block';
-      const db = dot.getBoundingClientRect();
-      let tx = db.right + 12, ty = db.top - 20;
-      if (tx + 260 > window.innerWidth) tx = db.left - 260;
-      if (ty < 10) ty = 10;
-      tooltip.style.left = tx + 'px';
-      tooltip.style.top = ty + 'px';
-      ttName.textContent = m.name;
-      const aspect = m.w > m.h * 2.5 ? '32:9' : m.w > m.h * 1.5 ? '21:9' : '~16:9';
-      ttDetail.innerHTML =
-        'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
-        'Diagonal: ' + m.diag + '"<br>' +
-        'PPI: ' + m.ppi.toFixed(0) + '<br>' +
-        'Total: ' + m.megapixels.toFixed(1) + ' MP<br>' +
-        'Aspect: ' + aspect;
+      if (pinnedDotIndex !== null && pinnedDotIndex !== i) return;
+      showTooltipForDot(dot, m);
     });
-    dot.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    dot.addEventListener('mouseleave', () => {
+      if (pinnedDotIndex === i) return;
+      tooltip.style.display = 'none';
+    });
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (pinnedDotIndex === i) {
+        unpinDot();
+      } else {
+        unpinDot();
+        pinnedDotIndex = i;
+        dot.classList.add('pinned');
+        // Only reposition if tooltip isn't already visible (e.g. touch)
+        if (tooltip.style.display !== 'block') {
+          showTooltipForDot(dot, m);
+        }
+      }
+    });
 
     chartArea.appendChild(dot);
     dotEls.push(dot);
@@ -360,6 +541,75 @@ function createDots() {
     chartArea.appendChild(label);
     labelEls.push(label);
   });
+
+  // Click anywhere else to unpin
+  document.addEventListener('click', () => { unpinDot(); });
+}
+
+// Build groups based on screen-space proximity (union-find clustering)
+const CLUSTER_THRESHOLD = 20; // pixels -- dots closer than this collapse
+
+function buildGroups() {
+  // Compute target ranges to get screen positions
+  const vis = monitors.filter((_, i) => visibleMonitors.has(i));
+  const src = vis.length > 0 ? vis : monitors;
+  const tX = niceRange(src.map(m => getVal(m, xAxisKey)), 0.15);
+  const tY = niceRange(src.map(m => getVal(m, yAxisKey)), 0.15);
+
+  measureChart();
+
+  const tXSpan = tX.max - tX.min || 1;
+  const tYSpan = tY.max - tY.min || 1;
+  function tmpXPos(v) { return (v - tX.min) / tXSpan * W; }
+  function tmpYPos(v) { return H - (v - tY.min) / tYSpan * H; }
+
+  const positions = monitors.map(m => ({
+    x: tmpXPos(getVal(m, xAxisKey)),
+    y: tmpYPos(getVal(m, yAxisKey)),
+  }));
+
+  // Union-Find
+  const parent = monitors.map((_, i) => i);
+
+  function find(i) {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  }
+
+  function union(a, b) {
+    const ra = find(a), rb = find(b);
+    if (ra !== rb) parent[rb] = ra;
+  }
+
+  for (let i = 0; i < monitors.length; i++) {
+    for (let j = i + 1; j < monitors.length; j++) {
+      const dx = positions[i].x - positions[j].x;
+      const dy = positions[i].y - positions[j].y;
+      if (Math.sqrt(dx * dx + dy * dy) < CLUSTER_THRESHOLD) {
+        union(i, j);
+      }
+    }
+  }
+
+  const newGroups = {};
+  for (let i = 0; i < monitors.length; i++) {
+    const root = find(i);
+    const key = 'g' + root;
+    if (!newGroups[key]) newGroups[key] = { indices: [], expanded: false };
+    newGroups[key].indices.push(i);
+  }
+
+  return newGroups;
+}
+
+function destroyClusters() {
+  Object.keys(badgeEls).forEach(key => {
+    if (badgeEls[key]) badgeEls[key].remove();
+  });
+  badgeEls = {};
 }
 
 function createClusters() {
@@ -370,18 +620,24 @@ function createClusters() {
     badge.className = 'cluster-badge';
     badge.textContent = 'x' + group.indices.length;
     badge.addEventListener('click', () => {
+      // Add animation class before toggling
+      group.indices.forEach(mi => {
+        dotEls[mi].classList.add('fan-animate');
+        labelEls[mi].classList.add('fan-animate');
+      });
       group.expanded = !group.expanded;
       positionDots();
+      // Remove animation class after transition completes
+      setTimeout(() => {
+        group.indices.forEach(mi => {
+          dotEls[mi].classList.remove('fan-animate');
+          labelEls[mi].classList.remove('fan-animate');
+        });
+      }, 380);
     });
     chartArea.appendChild(badge);
     badgeEls[key] = badge;
 
-    const resLabel = document.createElement('div');
-    resLabel.className = 'cluster-res-label';
-    const m0 = monitors[group.indices[0]];
-    resLabel.textContent = m0.w + 'x' + m0.h;
-    chartArea.appendChild(resLabel);
-    resLabelEls[key] = resLabel;
   });
 }
 
@@ -496,7 +752,127 @@ function buildMonitorPanel() {
   container.appendChild(panel);
 }
 
+// Filter panel
+let filterDebounceTimer = null;
+
+function buildFilterPanel() {
+  const container = document.getElementById('filterPanel');
+  container.innerHTML = '';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.innerHTML = 'filters <span class="arrow">&#9662;</span>';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'filter-list';
+
+  const filterDefs = [
+    { key: 'w',    label: 'Horizontal Pixels' },
+    { key: 'h',    label: 'Vertical Pixels' },
+    { key: 'ppi',  label: 'PPI' },
+    { key: 'ar',   label: 'Aspect Ratio' },
+    { key: 'diag', label: 'Diagonal (in)' },
+    { key: 'mp',   label: 'Megapixels' },
+  ];
+
+  filterDefs.forEach(({ key, label }) => {
+    const row = document.createElement('div');
+    row.className = 'filter-row';
+
+    const rowLabel = document.createElement('span');
+    rowLabel.className = 'filter-row-label';
+    rowLabel.textContent = label;
+    row.appendChild(rowLabel);
+
+    const minLabel = document.createElement('span');
+    minLabel.className = 'filter-input-label';
+    minLabel.textContent = 'min';
+    row.appendChild(minLabel);
+
+    const minInput = document.createElement('input');
+    minInput.type = 'number';
+    minInput.className = 'filter-input';
+    minInput.placeholder = '--';
+    minInput.step = 'any';
+    minInput.addEventListener('input', () => onFilterInput(key, 'min', minInput.value));
+    row.appendChild(minInput);
+
+    const maxLabel = document.createElement('span');
+    maxLabel.className = 'filter-input-label';
+    maxLabel.textContent = 'max';
+    row.appendChild(maxLabel);
+
+    const maxInput = document.createElement('input');
+    maxInput.type = 'number';
+    maxInput.className = 'filter-input';
+    maxInput.placeholder = '--';
+    maxInput.step = 'any';
+    maxInput.addEventListener('input', () => onFilterInput(key, 'max', maxInput.value));
+    row.appendChild(maxInput);
+
+    list.appendChild(row);
+  });
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.classList.toggle('open');
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+}
+
+function onFilterInput(key, bound, value) {
+  clearTimeout(filterDebounceTimer);
+  filterDebounceTimer = setTimeout(() => {
+    if (!filters[key]) filters[key] = {};
+    const num = parseFloat(value);
+    if (isNaN(num) || value.trim() === '') {
+      delete filters[key][bound];
+      if (Object.keys(filters[key]).length === 0) delete filters[key];
+    } else {
+      filters[key][bound] = num;
+    }
+    applyFilters();
+  }, 200);
+}
+
+function passesFilters(m) {
+  for (const [key, bounds] of Object.entries(filters)) {
+    const val = getVal(m, key);
+    if (bounds.min !== undefined && val < bounds.min) return false;
+    if (bounds.max !== undefined && val > bounds.max) return false;
+  }
+  return true;
+}
+
+function applyFilters() {
+  monitors.forEach((m, i) => {
+    const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
+    if (checkboxOn && passesFilters(m)) {
+      visibleMonitors.add(i);
+    } else {
+      visibleMonitors.delete(i);
+    }
+  });
+  updateVisibility();
+}
+
 function updateVisibility() {
+  // Re-apply filter logic to sync checkbox + filter state
+  monitors.forEach((m, i) => {
+    const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
+    if (checkboxOn && passesFilters(m)) {
+      visibleMonitors.add(i);
+    } else {
+      visibleMonitors.delete(i);
+    }
+  });
+
   // Sync category checkbox states
   const grouped = {};
   monitors.forEach((m, i) => {
@@ -513,19 +889,113 @@ function updateVisibility() {
   rerender();
 }
 
+// Axis controls
+function buildAxisControls() {
+  const container = document.getElementById('axisControls');
+  container.innerHTML = '';
+
+  const axisOptions = Object.entries(AXES);
+
+  // X axis
+  const xGroup = document.createElement('div');
+  xGroup.className = 'axis-control-group';
+  const xLabel = document.createElement('label');
+  xLabel.textContent = 'X:';
+  xGroup.appendChild(xLabel);
+  const xSelect = document.createElement('select');
+  axisOptions.forEach(([key, cfg]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = cfg.label;
+    if (key === xAxisKey) opt.selected = true;
+    xSelect.appendChild(opt);
+  });
+  xGroup.appendChild(xSelect);
+  container.appendChild(xGroup);
+
+  // Y axis
+  const yGroup = document.createElement('div');
+  yGroup.className = 'axis-control-group';
+  const yLabel = document.createElement('label');
+  yLabel.textContent = 'Y:';
+  yGroup.appendChild(yLabel);
+  const ySelect = document.createElement('select');
+  axisOptions.forEach(([key, cfg]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = cfg.label;
+    if (key === yAxisKey) opt.selected = true;
+    ySelect.appendChild(opt);
+  });
+  yGroup.appendChild(ySelect);
+  container.appendChild(yGroup);
+
+  xSelect.addEventListener('change', () => switchAxes(xSelect.value, yAxisKey));
+  ySelect.addEventListener('change', () => switchAxes(xAxisKey, ySelect.value));
+}
+
+function switchAxes(newX, newY) {
+  xAxisKey = newX;
+  yAxisKey = newY;
+
+  // Update axis title text
+  document.getElementById('xAxisTitle').innerHTML = AXES[xAxisKey].label + ' &#8594;';
+  document.getElementById('yAxisTitle').innerHTML = AXES[yAxisKey].label + ' &#8594;';
+
+  // Rebuild groups for new axes
+  destroyClusters();
+  groups = buildGroups();
+  createClusters();
+
+  // Update note text based on axis mode
+  updateNoteBar();
+
+  rerender();
+}
+
+function updateNoteBar() {
+  const isWH = xAxisKey === 'w' && yAxisKey === 'h';
+  const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
+
+  const noteRatio = document.getElementById('noteRatio');
+  const noteMp = document.getElementById('noteMp');
+  const noteSep1 = document.getElementById('noteSep1');
+  const noteSep2 = document.getElementById('noteSep2');
+
+  if (isWH) {
+    noteRatio.style.display = '';
+    noteRatio.textContent = '--- diagonal = aspect ratio';
+    noteSep1.style.display = '';
+    noteMp.style.display = '';
+    noteMp.textContent = '~~~ curve = same megapixels';
+    noteSep2.style.display = '';
+  } else if (hasAr) {
+    noteRatio.style.display = '';
+    noteRatio.textContent = '--- line = aspect ratio';
+    noteSep1.style.display = 'none';
+    noteMp.style.display = 'none';
+    noteSep2.style.display = '';
+  } else {
+    noteRatio.style.display = 'none';
+    noteSep1.style.display = 'none';
+    noteMp.style.display = 'none';
+    noteSep2.style.display = 'none';
+  }
+}
+
 let animationId = null;
 const ANIM_DURATION = 350;
 
 function rerender() {
-  // Compute target ranges
+  // Compute target ranges from visible monitors
   const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
   let targetX, targetY;
   if (visMonitors.length === 0) {
     targetX = { min: 0, max: 8000 };
     targetY = { min: 0, max: 5000 };
   } else {
-    targetX = niceRange(visMonitors.map(m => m.w), 0.15);
-    targetY = niceRange(visMonitors.map(m => m.h), 0.15);
+    targetX = niceRange(visMonitors.map(m => getVal(m, xAxisKey)), 0.15);
+    targetY = niceRange(visMonitors.map(m => getVal(m, yAxisKey)), 0.15);
   }
 
   // Apply visibility immediately
@@ -546,9 +1016,6 @@ function rerender() {
         badgeEls[key].textContent = 'x' + visCount;
       }
     }
-    if (resLabelEls[key]) {
-      resLabelEls[key].style.display = visCount === 0 ? 'none' : '';
-    }
   });
 
   const startX = { min: xRange.min, max: xRange.max };
@@ -560,7 +1027,6 @@ function rerender() {
   function tick(now) {
     const elapsed = now - startTime;
     const t = Math.min(1, elapsed / ANIM_DURATION);
-    // Ease out cubic
     const e = 1 - Math.pow(1 - t, 3);
 
     xRange = {
@@ -576,6 +1042,7 @@ function rerender() {
     drawGrid();
     updateRatioLines();
     updateMpCurves();
+    avoidRefLabelOverlap();
     positionDots();
 
     if (t < 1) {
@@ -596,7 +1063,6 @@ function measureLabelMargin() {
   mpCurveEls.forEach(({ label }) => {
     maxW = Math.max(maxW, label.offsetWidth);
   });
-  // 6px gap + label width + 8px breathing room
   chartArea.style.right = (maxW + 14) + 'px';
   measureChart();
 }
@@ -610,6 +1076,7 @@ function render() {
   drawGrid();
   updateRatioLines();
   updateMpCurves();
+  avoidRefLabelOverlap();
   createDots();
   createClusters();
   positionDots();
@@ -624,21 +1091,23 @@ async function init() {
   ratioLines = data.ratioLines;
   mpCurves = data.mpCurves;
 
+  // Compute derived properties
   monitors.forEach(m => {
     m.ppi = Math.sqrt(m.w * m.w + m.h * m.h) / m.diag;
-    m.megapixels = (m.w * m.h) / 1e6;
-  });
-
-  monitors.forEach((m, i) => {
-    const key = m.w + 'x' + m.h;
-    if (!groups[key]) groups[key] = { indices: [], expanded: false };
-    groups[key].indices.push(i);
+    m.mp = (m.w * m.h) / 1e6;
+    m.ar = m.w / m.h;
   });
 
   visibleMonitors = new Set(monitors.map((_, i) => i));
 
+  // Build initial groups (after visibleMonitors is set)
+  groups = buildGroups();
+
+  buildAxisControls();
   buildMonitorPanel();
+  buildFilterPanel();
   buildLegend();
+  updateNoteBar();
   render();
 }
 
