@@ -781,7 +781,7 @@ function showTooltipForDot(dot, m) {
   if (ty < 10) ty = 10;
   tooltip.style.left = tx + 'px';
   tooltip.style.top = ty + 'px';
-  ttName.textContent = m.name;
+  ttName.textContent = m.name + (m.upcoming ? ' (upcoming)' : '');
   ttDetail.innerHTML =
     'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
     'Megapixels: ' + m.mp.toFixed(1) + ' MP<br>' +
@@ -803,7 +803,7 @@ function unpinDot() {
 function createDots() {
   monitors.forEach((m, i) => {
     const dot = document.createElement('div');
-    dot.className = 'dot cat-' + m.cat;
+    dot.className = 'dot cat-' + m.cat + (m.upcoming ? ' upcoming' : '');
 
     let hoverTimer = null;
     dot.addEventListener('mouseenter', () => {
