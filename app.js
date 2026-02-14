@@ -333,7 +333,7 @@ function buildMonitorPanel() {
 
   const toggle = document.createElement('button');
   toggle.className = 'panel-toggle';
-  toggle.textContent = 'Show/hide monitors';
+  toggle.innerHTML = 'show/hide monitors <span class="arrow">&#9662;</span>';
   panel.appendChild(toggle);
 
   const list = document.createElement('div');
@@ -404,7 +404,7 @@ function buildMonitorPanel() {
 
   toggle.addEventListener('click', () => {
     list.classList.toggle('open');
-    toggle.textContent = list.classList.contains('open') ? 'Hide monitor list' : 'Show/hide monitors';
+    toggle.classList.toggle('open');
   });
 
   panel.appendChild(list);

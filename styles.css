@@ -247,32 +247,46 @@ h1 + .outer-wrapper {
 
 /* Monitor panel */
 .monitor-panel {
-  margin-top: 8px;
+  margin-top: 24px;
   text-align: center;
 }
 
 .panel-toggle {
-  background: none;
-  border: 1px solid #3a3c52;
-  color: #7a7a8e;
-  font-size: 0.72rem;
+  background: transparent;
+  border: none;
+  color: #55556a;
+  font-size: 0.7rem;
   font-family: 'JetBrains Mono', monospace;
-  padding: 4px 14px;
-  border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  padding: 0;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
 }
 
 .panel-toggle:hover {
-  color: #b0b0c0;
-  border-color: #5a5c72;
+  color: #9a9aae;
+}
+
+.panel-toggle .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 0.6rem;
+  margin-left: 4px;
+}
+
+.panel-toggle.open .arrow {
+  transform: rotate(180deg);
 }
 
 .monitor-list {
   display: none;
   max-width: 820px;
-  margin: 10px auto 0;
+  margin: 14px auto 0;
   text-align: left;
+  background: #161822;
+  border: 1px solid #2a2c3a;
+  border-radius: 10px;
+  padding: 16px 20px;
 }
 
 .monitor-list.open {
@@ -280,14 +294,18 @@ h1 + .outer-wrapper {
 }
 
 .monitor-list-category {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.monitor-list-category:last-child {
+  margin-bottom: 0;
 }
 
 .monitor-list-category-title {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-family: 'JetBrains Mono', monospace;
-  color: #7a7a8e;
-  margin-bottom: 4px;
+  color: #9a9aae;
+  margin-bottom: 5px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -301,8 +319,8 @@ h1 + .outer-wrapper {
 }
 
 .monitor-list-category-title .cat-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -310,8 +328,8 @@ h1 + .outer-wrapper {
 .monitor-list-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  padding-left: 12px;
+  gap: 4px 18px;
+  padding-left: 24px;
 }
 
 .monitor-checkbox-label {
@@ -320,7 +338,7 @@ h1 + .outer-wrapper {
   gap: 5px;
   font-size: 0.68rem;
   font-family: 'JetBrains Mono', monospace;
-  color: #9a9aae;
+  color: #7a7a8e;
   cursor: pointer;
   user-select: none;
 }
