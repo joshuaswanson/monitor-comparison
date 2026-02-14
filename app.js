@@ -142,6 +142,9 @@ function positionDots() {
     } else if (group.expanded) {
       const visIndices = indices.filter(mi => visibleMonitors.has(mi));
       const offsets = fanOffsets(visIndices.length);
+      // Find the rightmost and leftmost offsets
+      let maxDx = -Infinity, minDx = Infinity;
+      offsets.forEach(o => { if (o.dx > maxDx) maxDx = o.dx; if (o.dx < minDx) minDx = o.dx; });
       visIndices.forEach((mi, j) => {
         const x = cx + offsets[j].dx;
         const y = cy + offsets[j].dy;
@@ -152,6 +155,8 @@ function positionDots() {
         labelEls[mi].style.zIndex = '6';
 
         const dx = offsets[j].dx, dy = offsets[j].dy;
+        const isRightmost = dx === maxDx && dx > 3;
+        const isLeftmost = dx === minDx && dx < -3;
         let lx = x, ly = y;
         labelEls[mi].style.transform = '';
         if (dx < -3) {
@@ -160,7 +165,8 @@ function positionDots() {
         } else {
           lx += 8;
         }
-        if (dy > 3) ly += 8;
+        if (isRightmost || isLeftmost) ly -= 4;
+        else if (dy > 3) ly += 8;
         else if (dy < -3) ly -= 12;
         else ly -= 4;
         labelEls[mi].style.left = lx + 'px';
@@ -262,55 +268,80 @@ function positionDots() {
     badgeObstacles.push({ x, y, hw: bw, hh: bh });
   });
 
-  // Collision avoidance for singleton labels
+  // Collision avoidance for singleton labels (dots, badges, AND other labels)
   const labelHeight = 11;
   const dotR = 8;
+  const placedLabels = [];
+
+  function labelRect(lx, ly, lw, alignR) {
+    const left = alignR ? lx - lw : lx;
+    return { left, right: left + lw, top: ly, bottom: ly + labelHeight };
+  }
+
+  function rectsOverlap(a, b) {
+    return a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+  }
 
   function labelHitsObstacle(lx, ly, lw, alignR, ownIdx) {
-    const lLeft = alignR ? lx - lw : lx;
-    const lRight = lLeft + lw;
-    const lTop = ly;
-    const lBottom = ly + labelHeight;
+    const r = labelRect(lx, ly, lw, alignR);
     for (const dp of allDotPositions) {
       if (dp.idx === ownIdx) continue;
-      if (lRight > dp.x - dotR && lLeft < dp.x + dotR &&
-          lBottom > dp.y - dotR && lTop < dp.y + dotR) {
+      if (r.right > dp.x - dotR && r.left < dp.x + dotR &&
+          r.bottom > dp.y - dotR && r.top < dp.y + dotR) {
         return true;
       }
     }
     for (const b of badgeObstacles) {
-      if (lRight > b.x - b.hw && lLeft < b.x + b.hw &&
-          lBottom > b.y - b.hh && lTop < b.y + b.hh) {
+      if (r.right > b.x - b.hw && r.left < b.x + b.hw &&
+          r.bottom > b.y - b.hh && r.top < b.y + b.hh) {
         return true;
       }
+    }
+    for (const pl of placedLabels) {
+      if (rectsOverlap(r, pl)) return true;
     }
     return false;
   }
 
-  // Label-dot collision: try nearby positions around own dot
+  const candidates = [
+    (cx, cy) => ({ lx: cx + 10, ly: cy - 4,  alignRight: false }),  // right
+    (cx, cy) => ({ lx: cx + 10, ly: cy - 14, alignRight: false }),  // above-right
+    (cx, cy) => ({ lx: cx + 10, ly: cy + 10, alignRight: false }),  // below-right
+    (cx, cy) => ({ lx: cx - 10, ly: cy - 4,  alignRight: true }),   // left
+    (cx, cy) => ({ lx: cx - 10, ly: cy - 14, alignRight: true }),   // above-left
+    (cx, cy) => ({ lx: cx - 10, ly: cy + 10, alignRight: true }),   // below-left
+  ];
+
+  // Place labels greedily, checking against all previously placed labels
   singletonLabels.forEach(sl => {
     if (hiddenSingletons.has(sl.idx)) return;
     const lw = labelEls[sl.idx].offsetWidth || 70;
-    if (!labelHitsObstacle(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) return;
-    const candidates = [
-      { lx: sl.cx + 10, ly: sl.cy - 14, alignRight: false },   // above-right
-      { lx: sl.cx + 10, ly: sl.cy + 10, alignRight: false },   // below-right
-      { lx: sl.cx - 10, ly: sl.cy - 4,  alignRight: true },    // left
-      { lx: sl.cx - 10, ly: sl.cy - 14, alignRight: true },    // above-left
-      { lx: sl.cx - 10, ly: sl.cy + 10, alignRight: true },    // below-left
-    ];
-    for (const c of candidates) {
+
+    // Try default position first, then candidates
+    if (!labelHitsObstacle(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) {
+      placedLabels.push(labelRect(sl.lx, sl.ly, lw, sl.alignRight));
+      return;
+    }
+    for (const fn of candidates) {
+      const c = fn(sl.cx, sl.cy);
       if (!labelHitsObstacle(c.lx, c.ly, lw, c.alignRight, sl.idx)) {
         sl.lx = c.lx;
         sl.ly = c.ly;
         sl.alignRight = c.alignRight;
+        placedLabels.push(labelRect(sl.lx, sl.ly, lw, sl.alignRight));
         return;
       }
     }
+    // No position works -- hide this label
+    sl.hidden = true;
   });
 
   // Apply final positions
-  singletonLabels.forEach(({ idx, lx, ly, alignRight }) => {
+  singletonLabels.forEach(({ idx, lx, ly, alignRight, hidden }) => {
+    if (hidden) {
+      labelEls[idx].style.opacity = '0';
+      return;
+    }
     labelEls[idx].style.transform = alignRight ? 'translateX(-100%)' : '';
     labelEls[idx].style.left = lx + 'px';
     labelEls[idx].style.top = ly + 'px';
@@ -1909,3 +1940,18 @@ async function init() {
 }
 
 init();
+
+window.addEventListener('resize', () => {
+  if (window._resizeTimer) clearTimeout(window._resizeTimer);
+  window._resizeTimer = setTimeout(() => {
+    computeLayout();
+    measureLabelMargin();
+    drawGrid();
+    updateRatioLines();
+    updateMpCurves();
+    updateAreaCurves();
+    updatePpiLines();
+    avoidRefLabelOverlap();
+    positionDots();
+  }, 150);
+});
