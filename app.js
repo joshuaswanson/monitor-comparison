@@ -160,9 +160,11 @@ function positionDots() {
         labelEls[mi].style.left = lx + 'px';
         labelEls[mi].style.top = ly + 'px';
 
-        expandedDotPositions.push({ x, y });
+        const labelW = labelEls[mi].offsetWidth || 70;
+        const labelLeft = dx < -3 ? lx - labelW : lx;
+        expandedDotPositions.push({ x, y, labelLeft, labelRight: labelLeft + labelW, labelTop: ly, labelBottom: ly + 14 });
       });
-      expandedDotPositions.push({ x: cx, y: cy });
+      expandedDotPositions.push({ x: cx, y: cy, labelLeft: cx - 10, labelRight: cx + 10, labelTop: cy - 10, labelBottom: cy + 10 });
       // Hidden dots in this group still go to centroid
       indices.filter(mi => !visibleMonitors.has(mi)).forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
@@ -189,14 +191,21 @@ function positionDots() {
     }
   });
 
-  // Hide non-expanded badges/dots and singletons that are too close to expanded cluster dots
-  const hideThreshold = 35;
-  nonExpandedBadges.forEach(({ el, x, y, indices }) => {
-    let tooClose = false;
+  // Hide non-expanded badges/dots and singletons that overlap expanded cluster dots/labels
+  const dotPad = 12; // padding around dots for overlap check
+  function overlapsExpanded(px, py) {
     for (const ep of expandedDotPositions) {
-      const dx = x - ep.x, dy = y - ep.y;
-      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) { tooClose = true; break; }
+      // Check overlap with expanded dot
+      if (Math.abs(px - ep.x) < dotPad * 2 && Math.abs(py - ep.y) < dotPad * 2) return true;
+      // Check overlap with expanded label
+      if (px + dotPad > ep.labelLeft - 4 && px - dotPad < ep.labelRight + 4 &&
+          py + dotPad > ep.labelTop - 2 && py - dotPad < ep.labelBottom + 2) return true;
     }
+    return false;
+  }
+
+  nonExpandedBadges.forEach(({ el, x, y, indices }) => {
+    const tooClose = overlapsExpanded(x, y);
     el.style.opacity = tooClose ? '0' : '1';
     el.style.pointerEvents = tooClose ? 'none' : '';
     indices.forEach(mi => {
@@ -204,14 +213,10 @@ function positionDots() {
     });
   });
 
-  // Hide singleton dots/labels that are too close to expanded cluster dots
+  // Hide singleton dots/labels that overlap expanded cluster dots/labels
   const hiddenSingletons = new Set();
   singletonLabels.forEach(sl => {
-    let tooClose = false;
-    for (const ep of expandedDotPositions) {
-      const dx = sl.cx - ep.x, dy = sl.cy - ep.y;
-      if (Math.sqrt(dx * dx + dy * dy) < hideThreshold) { tooClose = true; break; }
-    }
+    const tooClose = overlapsExpanded(sl.cx, sl.cy);
     if (tooClose) hiddenSingletons.add(sl.idx);
     dotEls[sl.idx].style.opacity = tooClose ? '0' : '';
     labelEls[sl.idx].style.opacity = tooClose ? '0' : '1';
