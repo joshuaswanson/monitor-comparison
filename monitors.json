@@ -24,9 +24,9 @@
     { "name": "32:9", "r": 3.5556, "color": "#fb923c" }
   ],
   "mpCurves": [
-    { "name": "~11.1 MP -- 5K2K ultrawides", "w": 5120, "h": 2160, "color": "#34d399" },
-    { "name": "~14.7 MP -- Studio Display", "w": 5120, "h": 2880, "color": "#a78bfa" },
-    { "name": "~20.4 MP -- Pro Display XDR", "w": 6016, "h": 3384, "color": "#a78bfa" }
+    { "name": "~11.1 MP", "w": 5120, "h": 2160, "color": "#34d399" },
+    { "name": "~14.7 MP", "w": 5120, "h": 2880, "color": "#a78bfa" },
+    { "name": "~20.4 MP", "w": 6016, "h": 3384, "color": "#a78bfa" }
   ],
   "categories": {
     "macbook":        { "label": "MacBook ref",               "color": "#f5a623" },
