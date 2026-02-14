@@ -40,6 +40,13 @@
     { "name": "~20.4 MP",       "w": 6016, "h": 3384, "color": "#a78bfa", "default": true },
     { "name": "~33.2 MP (8K)",  "w": 7680, "h": 4320, "color": "#e879f9", "default": false }
   ],
+  "areaCurves": [
+    { "name": "200 in²", "area": 200, "color": "#7a9a9a", "default": false },
+    { "name": "400 in²", "area": 400, "color": "#9a7a9a", "default": true },
+    { "name": "500 in²", "area": 500, "color": "#9a9a7a", "default": true },
+    { "name": "600 in²", "area": 600, "color": "#34d399", "default": true },
+    { "name": "800 in²", "area": 800, "color": "#e879f9", "default": false }
+  ],
   "categories": {
     "macbook":         { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
     "apple-ext":       { "label": "Apple external",            "color": "#a78bfa" },
