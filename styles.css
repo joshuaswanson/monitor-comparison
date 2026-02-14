@@ -160,7 +160,7 @@ h1 + .outer-wrapper {
   padding: 2px 7px;
   cursor: pointer;
   z-index: 4;
-  transition: opacity 0.25s ease;
+  transition: left 0.35s ease, top 0.35s ease, opacity 0.25s ease;
   user-select: none;
 }
 .cluster-badge:hover { border-color: #6a6c8a; color: #e0e0f0; }
@@ -173,7 +173,7 @@ h1 + .outer-wrapper {
   color: #55556a;
   pointer-events: none;
   z-index: 1;
-  transition: opacity 0.25s ease;
+  transition: left 0.35s ease, top 0.35s ease, opacity 0.25s ease;
 }
 
 /* Reference lines */

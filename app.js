@@ -21,6 +21,9 @@ const ttName = document.getElementById('ttName');
 const ttDetail = document.getElementById('ttDetail');
 const legendContainer = document.getElementById('legend');
 
+// Background layer for grid, ratio lines, MP curves (rebuilt on rescale)
+let bgLayer = null;
+
 function xPos(v) { return (v - xRange.min) / (xRange.max - xRange.min) * W; }
 function yPos(v) { return H - (v - yRange.min) / (yRange.max - yRange.min) * H; }
 
@@ -109,16 +112,32 @@ function positionDots() {
         labelEls[mi].style.left = lx + 'px';
         labelEls[mi].style.top = ly + 'px';
       });
-      badgeEls[key].style.opacity = '0.4';
-      resLabelEls[key].style.opacity = '1';
+      if (badgeEls[key]) {
+        badgeEls[key].style.left = cx + 'px';
+        badgeEls[key].style.top = cy + 'px';
+        badgeEls[key].style.opacity = '0.4';
+      }
+      if (resLabelEls[key]) {
+        resLabelEls[key].style.left = cx + 'px';
+        resLabelEls[key].style.top = (cy + 20) + 'px';
+        resLabelEls[key].style.opacity = '1';
+      }
     } else {
       indices.forEach(mi => {
         dotEls[mi].style.left = cx + 'px';
         dotEls[mi].style.top = cy + 'px';
         labelEls[mi].style.opacity = '0';
       });
-      badgeEls[key].style.opacity = '1';
-      resLabelEls[key].style.opacity = '1';
+      if (badgeEls[key]) {
+        badgeEls[key].style.left = cx + 'px';
+        badgeEls[key].style.top = cy + 'px';
+        badgeEls[key].style.opacity = '1';
+      }
+      if (resLabelEls[key]) {
+        resLabelEls[key].style.left = cx + 'px';
+        resLabelEls[key].style.top = (cy + 20) + 'px';
+        resLabelEls[key].style.opacity = '1';
+      }
     }
   });
 }
@@ -141,6 +160,13 @@ function buildLegend() {
   });
 }
 
+function ensureBgLayer() {
+  if (bgLayer) bgLayer.remove();
+  bgLayer = document.createElement('div');
+  bgLayer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;';
+  chartArea.insertBefore(bgLayer, chartArea.firstChild);
+}
+
 function drawGrid() {
   niceTicks(yRange.min, yRange.max, 7).forEach(v => {
     const y = yPos(v);
@@ -148,7 +174,7 @@ function drawGrid() {
     const line = document.createElement('div');
     line.className = 'grid-line-h';
     line.style.top = y + 'px';
-    chartArea.appendChild(line);
+    bgLayer.appendChild(line);
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-y';
     lbl.style.top = (areaOffsetTop + y) + 'px';
@@ -162,7 +188,7 @@ function drawGrid() {
     const line = document.createElement('div');
     line.className = 'grid-line-v';
     line.style.left = x + 'px';
-    chartArea.appendChild(line);
+    bgLayer.appendChild(line);
     const lbl = document.createElement('div');
     lbl.className = 'axis-label-x';
     lbl.style.left = (areaOffsetLeft + x) + 'px';
@@ -196,19 +222,7 @@ function drawMpCurves() {
     path.setAttribute('stroke-dasharray', '3 3');
     path.setAttribute('fill', 'none');
     svg.appendChild(path);
-    chartArea.appendChild(svg);
-
-    const lpt = pts[Math.floor(pts.length * 0.1)];
-    if (lpt) {
-      const cl = document.createElement('div');
-      cl.className = 'curve-label';
-      cl.style.color = curve.color;
-      cl.style.opacity = '0.4';
-      cl.textContent = curve.name;
-      cl.style.left = (lpt.sx + 6) + 'px';
-      cl.style.top = (lpt.sy - 14) + 'px';
-      chartArea.appendChild(cl);
-    }
+    bgLayer.appendChild(svg);
   });
 }
 
@@ -236,7 +250,7 @@ function drawRatioLines() {
     line.setAttribute('stroke-width', '1.5');
     line.setAttribute('stroke-dasharray', '6 4');
     svg.appendChild(line);
-    chartArea.appendChild(svg);
+    bgLayer.appendChild(svg);
 
     const li = Math.min(pts.length - 1, Math.floor(pts.length * 0.88));
     const lbl = document.createElement('div');
@@ -246,7 +260,7 @@ function drawRatioLines() {
     lbl.textContent = rl.name;
     lbl.style.left = (pts[li].sx + 8) + 'px';
     lbl.style.top = (pts[li].sy - 16) + 'px';
-    chartArea.appendChild(lbl);
+    bgLayer.appendChild(lbl);
   });
 }
 
@@ -288,14 +302,10 @@ function createDots() {
 function createClusters() {
   Object.entries(groups).forEach(([key, group]) => {
     if (group.indices.length <= 1) return;
-    const m0 = monitors[group.indices[0]];
-    const cx = xPos(m0.w), cy = yPos(m0.h);
 
     const badge = document.createElement('div');
     badge.className = 'cluster-badge';
     badge.textContent = 'x' + group.indices.length;
-    badge.style.left = cx + 'px';
-    badge.style.top = cy + 'px';
     badge.addEventListener('click', () => {
       group.expanded = !group.expanded;
       positionDots();
@@ -305,9 +315,8 @@ function createClusters() {
 
     const resLabel = document.createElement('div');
     resLabel.className = 'cluster-res-label';
+    const m0 = monitors[group.indices[0]];
     resLabel.textContent = m0.w + 'x' + m0.h;
-    resLabel.style.left = cx + 'px';
-    resLabel.style.top = (cy + 20) + 'px';
     chartArea.appendChild(resLabel);
     resLabelEls[key] = resLabel;
   });
@@ -324,7 +333,7 @@ function buildMonitorPanel() {
 
   const toggle = document.createElement('button');
   toggle.className = 'panel-toggle';
-  toggle.textContent = 'Individual monitors';
+  toggle.textContent = 'Show/hide monitors';
   panel.appendChild(toggle);
 
   const list = document.createElement('div');
@@ -395,7 +404,7 @@ function buildMonitorPanel() {
 
   toggle.addEventListener('click', () => {
     list.classList.toggle('open');
-    toggle.textContent = list.classList.contains('open') ? 'Hide individual monitors' : 'Individual monitors';
+    toggle.textContent = list.classList.contains('open') ? 'Hide monitor list' : 'Show/hide monitors';
   });
 
   panel.appendChild(list);
@@ -416,17 +425,10 @@ function updateVisibility() {
     catCheckboxEls[catKey].indeterminate = visCount > 0 && visCount < indices.length;
   });
 
-  // Re-render chart with rescaled axes for visible monitors
   rerender();
 }
 
 function rerender() {
-  // Clear chart contents
-  chartArea.innerHTML = '';
-  yLabelsCol.innerHTML = '';
-  // Remove x-axis labels from chart container
-  chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
-
   // Recompute ranges based on visible monitors only
   const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
   if (visMonitors.length === 0) {
@@ -444,17 +446,15 @@ function rerender() {
   areaOffsetLeft = rect.left - chartRect.left;
   areaOffsetTop = rect.top - chartRect.top;
 
-  // Rebuild chart elements
-  dotEls.length = 0;
-  labelEls.length = 0;
-  Object.keys(badgeEls).forEach(k => delete badgeEls[k]);
-  Object.keys(resLabelEls).forEach(k => delete resLabelEls[k]);
-
+  // Rebuild background layer (grid, ratio lines, MP curves)
+  yLabelsCol.innerHTML = '';
+  chartContainer.querySelectorAll('.axis-label-x').forEach(el => el.remove());
+  ensureBgLayer();
   drawGrid();
   drawMpCurves();
   drawRatioLines();
-  createDots();
-  createClusters();
+
+  // Reposition existing dots and clusters (CSS transitions animate them)
   positionDots();
 
   // Apply visibility
@@ -483,6 +483,7 @@ function rerender() {
 
 function render() {
   computeLayout();
+  ensureBgLayer();
   drawGrid();
   drawMpCurves();
   drawRatioLines();
