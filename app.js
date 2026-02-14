@@ -486,15 +486,13 @@ function updateRatioLines() {
       line.setAttribute('x2', sx2);
       line.setAttribute('y2', sy2);
 
-      // Label positioning: check if line exits at top edge vs right edge
-      const atTopEdge = sy2 <= 2;
-      const atRightEdge = sx2 >= W - 2;
-      if (atTopEdge && !atRightEdge) {
-        label.style.left = (sx2 - 6) + 'px';
+      // Label at whichever end is near the top of the chart
+      if (sy2 <= sy1) {
+        label.style.left = (sx2 + 6) + 'px';
         label.style.top = (sy2 - 18) + 'px';
       } else {
-        label.style.left = (sx2 + 6) + 'px';
-        label.style.top = (sy2 - 6) + 'px';
+        label.style.left = (sx1 + 6) + 'px';
+        label.style.top = (sy1 - 18) + 'px';
       }
     } else if (xIsAr) {
       // Vertical line at x = ratio value
@@ -558,7 +556,7 @@ function createMpCurves() {
 function drawHyperbola(k, path, label) {
   label.style.display = '';
   let d = '';
-  let lastVisible = null;
+  let firstVisible = null;
   for (let j = 0; j <= CURVE_SAMPLES; j++) {
     const t = j / CURVE_SAMPLES;
     const px = xRange.min + t * (xRange.max - xRange.min);
@@ -568,7 +566,7 @@ function drawHyperbola(k, path, label) {
     const inBounds = sy >= 0 && sy <= H && sx >= 0 && sx <= W;
     if (inBounds) {
       d += (d ? ' L ' : 'M ') + sx.toFixed(1) + ' ' + sy.toFixed(1);
-      lastVisible = { sx, sy };
+      if (!firstVisible) firstVisible = { sx, sy };
     } else if (d) {
       // Clamp one final point to edge so line exits cleanly
       const csx = Math.max(0, Math.min(W, sx));
@@ -579,16 +577,9 @@ function drawHyperbola(k, path, label) {
   }
   path.setAttribute('d', d || 'M -100 -100');
 
-  if (lastVisible) {
-    const atTopEdge = lastVisible.sy <= 2;
-    const atRightEdge = lastVisible.sx >= W - 2;
-    if (atTopEdge && !atRightEdge) {
-      label.style.left = (lastVisible.sx - 6) + 'px';
-      label.style.top = (lastVisible.sy - 18) + 'px';
-    } else {
-      label.style.left = (lastVisible.sx + 6) + 'px';
-      label.style.top = (lastVisible.sy - 6) + 'px';
-    }
+  if (firstVisible) {
+    label.style.left = (firstVisible.sx + 6) + 'px';
+    label.style.top = (firstVisible.sy - 18) + 'px';
   } else {
     label.style.display = 'none';
   }
@@ -703,14 +694,13 @@ function updatePpiLines() {
     line.setAttribute('x2', sx2);
     line.setAttribute('y2', sy2);
 
-    const atTopEdge = sy2 <= 2;
-    const atRightEdge = sx2 >= W - 2;
-    if (atTopEdge && !atRightEdge) {
-      label.style.left = (sx2 - 6) + 'px';
+    // Label at whichever end is near the top of the chart
+    if (sy2 <= sy1) {
+      label.style.left = (sx2 + 6) + 'px';
       label.style.top = (sy2 - 18) + 'px';
     } else {
-      label.style.left = (sx2 + 6) + 'px';
-      label.style.top = (sy2 - 6) + 'px';
+      label.style.left = (sx1 + 6) + 'px';
+      label.style.top = (sy1 - 18) + 'px';
     }
   });
 }
@@ -1720,57 +1710,10 @@ function switchAxes(newX, newY) {
   groups = buildGroups();
   createClusters();
 
-  // Update note text and label margin based on axis mode
-  updateNoteBar();
+  // Update label margin based on axis mode
   updateLabelMargin();
 
   rerender();
-}
-
-function updateNoteBar() {
-  const whAxes = new Set(['w', 'h']);
-  const whInAxes = new Set(['wIn', 'hIn']);
-  const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const isWInHIn = whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const isAreaMp = (xAxisKey === 'area' && yAxisKey === 'mp') ||
-                   (xAxisKey === 'mp' && yAxisKey === 'area');
-  const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
-
-  const noteRatio = document.getElementById('noteRatio');
-  const noteMp = document.getElementById('noteMp');
-  const noteArea = document.getElementById('noteArea');
-  const notePpi = document.getElementById('notePpi');
-  const noteSep1 = document.getElementById('noteSep1');
-  const noteSep2 = document.getElementById('noteSep2');
-  const noteSep3 = document.getElementById('noteSep3');
-  const noteSep4 = document.getElementById('noteSep4');
-
-  // Hide all first
-  [noteRatio, noteMp, noteArea, notePpi, noteSep1, noteSep2, noteSep3, noteSep4].forEach(el => {
-    el.style.display = 'none';
-  });
-
-  if (isWH) {
-    noteRatio.style.display = '';
-    noteRatio.textContent = '--- diagonal = aspect ratio';
-    noteSep1.style.display = '';
-    noteMp.style.display = '';
-    noteMp.textContent = '~~~ curve = same megapixels';
-    noteSep2.style.display = '';
-  } else if (isWInHIn) {
-    noteRatio.style.display = '';
-    noteRatio.textContent = '--- diagonal = aspect ratio';
-    noteSep1.style.display = '';
-    noteArea.style.display = '';
-    noteSep3.style.display = '';
-  } else if (isAreaMp) {
-    notePpi.style.display = '';
-    noteSep4.style.display = '';
-  } else if (hasAr) {
-    noteRatio.style.display = '';
-    noteRatio.textContent = '--- line = aspect ratio';
-    noteSep1.style.display = '';
-  }
 }
 
 let animationId = null;
@@ -1945,7 +1888,6 @@ async function init() {
   buildAreaPanel();
   buildPpiPanel();
   buildLegend();
-  updateNoteBar();
   render();
 }
 
