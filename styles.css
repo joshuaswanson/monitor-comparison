@@ -221,7 +221,7 @@ h1 + .axis-controls {
   padding: 2px 7px;
   cursor: pointer;
   z-index: 4;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease, pointer-events 0s;
   user-select: none;
 }
 .cluster-badge:hover { border-color: #6a6c8a; color: #e0e0f0; }
