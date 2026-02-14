@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor Resolution Landscape</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>Monitor Resolution Landscape</h1>
+<p class="subtitle">horizontal vs vertical pixels -- diagonals = aspect ratios, curves = same total pixels</p>
+
+<div class="outer-wrapper">
+  <div class="y-axis-title">Vertical Pixels</div>
+  <div class="y-labels-col" id="yLabelsCol"></div>
+  <div class="chart-and-x">
+    <div class="chart-container" id="chart">
+      <div class="chart-area" id="chartArea"></div>
+    </div>
+    <div class="x-axis-title">Horizontal Pixels</div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-name" id="ttName"></div>
+  <div class="tt-detail" id="ttDetail"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<p class="note">
+  Diagonal lines = same aspect ratio. Curved lines = same total megapixels.
+  Click cluster badges to fan out overlapping monitors. Click again to collapse.
+</p>
+
+<script src="app.js"></script>
+</body>
+</html>
