@@ -3,6 +3,7 @@ let categories = {};
 let ratioLines = [];
 let mpCurves = [];
 let areaCurves = [];
+let ppiLines = [];
 
 let groups = {};
 const dotEls = [];
@@ -13,6 +14,7 @@ let visibleMonitors = new Set();
 let ratioEnabled = new Set();
 let mpEnabled = new Set();
 let areaEnabled = new Set();
+let ppiEnabled = new Set();
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
@@ -48,6 +50,7 @@ const legendContainer = document.getElementById('legend');
 const ratioLineEls = [];
 const mpCurveEls = [];
 const areaCurveEls = [];
+const ppiLineEls = [];
 let refSvg = null;
 let gridLayer = null;
 
@@ -605,6 +608,73 @@ function updateAreaCurves() {
   });
 }
 
+function createPpiLines() {
+  ppiLines.forEach(pl => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('stroke', pl.color);
+    line.setAttribute('stroke-opacity', '0.25');
+    line.setAttribute('stroke-width', '1');
+    line.setAttribute('stroke-dasharray', '6 4');
+    refSvg.appendChild(line);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'ratio-label';
+    lbl.style.color = pl.color;
+    lbl.style.opacity = '0.5';
+    lbl.textContent = pl.name;
+    chartArea.appendChild(lbl);
+
+    ppiLineEls.push({ line, label: lbl, data: pl });
+  });
+}
+
+function updatePpiLines() {
+  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
+
+  ppiLineEls.forEach(({ line, label, data }, i) => {
+    if (!ppiEnabled.has(i) || !isAreaMp) {
+      line.setAttribute('x1', -100);
+      line.setAttribute('y1', -100);
+      line.setAttribute('x2', -100);
+      line.setAttribute('y2', -100);
+      label.style.display = 'none';
+      return;
+    }
+
+    label.style.display = '';
+    // MP = area * PPI² / 1e6, so slope = PPI² / 1e6
+    const slope = data.ppi * data.ppi / 1e6;
+
+    // Line from origin: y = slope * x. Clip to visible range.
+    let x1d = xRange.min, y1d = slope * x1d;
+    let x2d = xRange.max, y2d = slope * x2d;
+
+    // Clip to y range
+    if (y1d < yRange.min) { y1d = yRange.min; x1d = y1d / slope; }
+    if (y1d > yRange.max) { y1d = yRange.max; x1d = y1d / slope; }
+    if (y2d < yRange.min) { y2d = yRange.min; x2d = y2d / slope; }
+    if (y2d > yRange.max) { y2d = yRange.max; x2d = y2d / slope; }
+
+    const sx1 = xPos(x1d), sy1 = yPos(y1d);
+    const sx2 = xPos(x2d), sy2 = yPos(y2d);
+
+    line.setAttribute('x1', sx1);
+    line.setAttribute('y1', sy1);
+    line.setAttribute('x2', sx2);
+    line.setAttribute('y2', sy2);
+
+    const atTopEdge = sy2 <= 2;
+    const atRightEdge = sx2 >= W - 2;
+    if (atTopEdge && !atRightEdge) {
+      label.style.left = (sx2 - 6) + 'px';
+      label.style.top = (sy2 - 18) + 'px';
+    } else {
+      label.style.left = (sx2 + 6) + 'px';
+      label.style.top = (sy2 - 6) + 'px';
+    }
+  });
+}
+
 // Nudge reference line/curve labels so they don't overlap
 function avoidRefLabelOverlap() {
   const refLabels = [];
@@ -626,6 +696,14 @@ function avoidRefLabelOverlap() {
   });
 
   areaCurveEls.forEach(({ label }) => {
+    if (label.style.display === 'none') return;
+    const top = parseFloat(label.style.top);
+    const left = parseFloat(label.style.left);
+    if (isNaN(top) || isNaN(left)) return;
+    refLabels.push({ el: label, top, left });
+  });
+
+  ppiLineEls.forEach(({ label }) => {
     if (label.style.display === 'none') return;
     const top = parseFloat(label.style.top);
     const left = parseFloat(label.style.left);
@@ -986,19 +1064,31 @@ function buildFilterPanel() {
   const list = document.createElement('div');
   list.className = 'filter-list open';
 
-  const filterDefs = [
-    { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
-    { key: 'h',    label: 'Vertical Pixels',   step: 1,    decimals: 0 },
-    { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
-    { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
-    { key: 'diag', label: 'Diagonal (in)',      step: 0.1,  decimals: 1 },
-    { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
-    { key: 'area', label: 'Screen Area (in²)', step: 1,    decimals: 0 },
-    { key: 'wIn',  label: 'Width (in)',        step: 0.1,  decimals: 1 },
-    { key: 'hIn',  label: 'Height (in)',       step: 0.1,  decimals: 1 },
+  const filterGroups = [
+    { heading: 'Resolution', filters: [
+      { key: 'w',    label: 'Horizontal Pixels', step: 1,    decimals: 0 },
+      { key: 'h',    label: 'Vertical Pixels',   step: 1,    decimals: 0 },
+      { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
+    ]},
+    { heading: 'Physical Size', filters: [
+      { key: 'wIn',  label: 'Width (in)',        step: 0.1,  decimals: 1 },
+      { key: 'hIn',  label: 'Height (in)',       step: 0.1,  decimals: 1 },
+      { key: 'diag', label: 'Diagonal (in)',     step: 0.1,  decimals: 1 },
+      { key: 'area', label: 'Screen Area (in²)', step: 1,    decimals: 0 },
+    ]},
+    { heading: 'Density / Ratio', filters: [
+      { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
+      { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
+    ]},
   ];
 
-  filterDefs.forEach(({ key, label, step, decimals }) => {
+  filterGroups.forEach(group => {
+    const groupHeading = document.createElement('div');
+    groupHeading.className = 'filter-group-heading';
+    groupHeading.textContent = group.heading;
+    list.appendChild(groupHeading);
+
+    group.filters.forEach(({ key, label, step, decimals }) => {
     const values = monitors.map(m => getVal(m, key));
     const dataMin = Math.floor(Math.min(...values) / step) * step;
     const dataMax = Math.ceil(Math.max(...values) / step) * step;
@@ -1089,6 +1179,7 @@ function buildFilterPanel() {
     row.appendChild(slidersDiv);
 
     list.appendChild(row);
+    });
   });
 
   panel.appendChild(list);
@@ -1372,6 +1463,81 @@ function buildAreaPanel() {
   container.appendChild(panel);
 }
 
+function buildPpiPanel() {
+  const container = document.getElementById('ppiPanel');
+  container.innerHTML = '';
+
+  const panel = document.createElement('div');
+  panel.className = 'filter-panel';
+
+  const toggle = document.createElement('button');
+  toggle.className = 'panel-toggle';
+  toggle.innerHTML = 'show/hide PPI lines <span class="arrow">&#9662;</span>';
+  panel.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'ref-list';
+
+  const allLabel = document.createElement('label');
+  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  allCb.checked = ppiEnabled.size > 0;
+  allCb.indeterminate = ppiEnabled.size > 0 && ppiEnabled.size < ppiLines.length;
+  list.appendChild(allLabel);
+
+  const items = document.createElement('div');
+  items.className = 'ref-list-items narrow';
+
+  const ppiCbs = [];
+  ppiLines.forEach((pl, i) => {
+    const label = document.createElement('label');
+    label.className = 'monitor-checkbox-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = ppiEnabled.has(i);
+    cb.addEventListener('change', () => {
+      if (cb.checked) { ppiEnabled.add(i); } else { ppiEnabled.delete(i); }
+      allCb.checked = ppiEnabled.size > 0;
+      allCb.indeterminate = ppiEnabled.size > 0 && ppiEnabled.size < ppiLines.length;
+      updateLabelMargin();
+      updatePpiLines();
+      avoidRefLabelOverlap();
+    });
+    ppiCbs.push(cb);
+    label.appendChild(cb);
+    const dot = document.createElement('div');
+    dot.className = 'cat-dot';
+    dot.style.background = pl.color;
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode(pl.name));
+    items.appendChild(label);
+  });
+
+  allCb.addEventListener('change', () => {
+    ppiLines.forEach((_, i) => {
+      if (allCb.checked) { ppiEnabled.add(i); } else { ppiEnabled.delete(i); }
+      ppiCbs[i].checked = allCb.checked;
+    });
+    allCb.indeterminate = false;
+    updateLabelMargin();
+    updatePpiLines();
+    avoidRefLabelOverlap();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode('all'));
+
+  list.appendChild(items);
+
+  toggle.addEventListener('click', () => {
+    list.classList.toggle('open');
+    toggle.classList.toggle('open');
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+}
+
 function applyFilters() {
   monitors.forEach((m, i) => {
     const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
@@ -1514,14 +1680,22 @@ function switchAxes(newX, newY) {
 function updateNoteBar() {
   const isWH = xAxisKey === 'w' && yAxisKey === 'h';
   const isWInHIn = xAxisKey === 'wIn' && yAxisKey === 'hIn';
+  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
 
   const noteRatio = document.getElementById('noteRatio');
   const noteMp = document.getElementById('noteMp');
   const noteArea = document.getElementById('noteArea');
+  const notePpi = document.getElementById('notePpi');
   const noteSep1 = document.getElementById('noteSep1');
   const noteSep2 = document.getElementById('noteSep2');
   const noteSep3 = document.getElementById('noteSep3');
+  const noteSep4 = document.getElementById('noteSep4');
+
+  // Hide all first
+  [noteRatio, noteMp, noteArea, notePpi, noteSep1, noteSep2, noteSep3, noteSep4].forEach(el => {
+    el.style.display = 'none';
+  });
 
   if (isWH) {
     noteRatio.style.display = '';
@@ -1530,31 +1704,19 @@ function updateNoteBar() {
     noteMp.style.display = '';
     noteMp.textContent = '~~~ curve = same megapixels';
     noteSep2.style.display = '';
-    noteArea.style.display = 'none';
-    noteSep3.style.display = 'none';
   } else if (isWInHIn) {
     noteRatio.style.display = '';
     noteRatio.textContent = '--- diagonal = aspect ratio';
     noteSep1.style.display = '';
-    noteMp.style.display = 'none';
-    noteSep2.style.display = 'none';
     noteArea.style.display = '';
     noteSep3.style.display = '';
+  } else if (isAreaMp) {
+    notePpi.style.display = '';
+    noteSep4.style.display = '';
   } else if (hasAr) {
     noteRatio.style.display = '';
     noteRatio.textContent = '--- line = aspect ratio';
-    noteSep1.style.display = 'none';
-    noteMp.style.display = 'none';
-    noteSep2.style.display = 'none';
-    noteArea.style.display = 'none';
-    noteSep3.style.display = '';
-  } else {
-    noteRatio.style.display = 'none';
-    noteSep1.style.display = 'none';
-    noteMp.style.display = 'none';
-    noteSep2.style.display = 'none';
-    noteArea.style.display = 'none';
-    noteSep3.style.display = 'none';
+    noteSep1.style.display = '';
   }
 }
 
@@ -1618,6 +1780,7 @@ function rerender() {
     updateRatioLines();
     updateMpCurves();
     updateAreaCurves();
+    updatePpiLines();
     avoidRefLabelOverlap();
     positionDots();
 
@@ -1644,6 +1807,9 @@ function measureLabelMargin() {
   areaCurveEls.forEach(({ label }) => {
     maxW = Math.max(maxW, label.offsetWidth);
   });
+  ppiLineEls.forEach(({ label }) => {
+    maxW = Math.max(maxW, label.offsetWidth);
+  });
   labelMarginRight = maxW + 14;
   chartArea.style.right = labelMarginRight + 'px';
   measureChart();
@@ -1655,8 +1821,10 @@ function updateLabelMargin() {
   const hasAr = xAxisKey === 'ar' || yAxisKey === 'ar';
   const hasRatio = ratioEnabled.size > 0;
   const hasMp = mpEnabled.size > 0;
+  const isAreaMp = xAxisKey === 'area' && yAxisKey === 'mp';
   const hasArea = areaEnabled.size > 0;
-  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea));
+  const hasPpi = ppiEnabled.size > 0;
+  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea)) || (isAreaMp && hasPpi);
   chartArea.style.right = needsMargin ? labelMarginRight + 'px' : '20px';
   measureChart();
 }
@@ -1667,11 +1835,13 @@ function render() {
   createRatioLines();
   createMpCurves();
   createAreaCurves();
+  createPpiLines();
   measureLabelMargin();
   drawGrid();
   updateRatioLines();
   updateMpCurves();
   updateAreaCurves();
+  updatePpiLines();
   avoidRefLabelOverlap();
   createDots();
   createClusters();
@@ -1687,6 +1857,7 @@ async function init() {
   ratioLines = data.ratioLines;
   mpCurves = data.mpCurves;
   areaCurves = data.areaCurves;
+  ppiLines = data.ppiLines;
 
   // Compute derived properties
   monitors.forEach(m => {
@@ -1705,6 +1876,7 @@ async function init() {
   ratioLines.forEach((rl, i) => { if (rl.default) ratioEnabled.add(i); });
   mpCurves.forEach((mc, i) => { if (mc.default) mpEnabled.add(i); });
   areaCurves.forEach((ac, i) => { if (ac.default) areaEnabled.add(i); });
+  ppiLines.forEach((pl, i) => { if (pl.default) ppiEnabled.add(i); });
 
   // Build initial groups (after visibleMonitors is set)
   groups = buildGroups();
@@ -1715,6 +1887,7 @@ async function init() {
   buildRatioPanel();
   buildMpPanel();
   buildAreaPanel();
+  buildPpiPanel();
   buildLegend();
   updateNoteBar();
   render();
