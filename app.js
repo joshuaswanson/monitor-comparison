@@ -31,6 +31,7 @@ const AXES = {
   area: { label: 'Screen Area (in²)', format: v => v.toFixed(0) },
   wIn:  { label: 'Width (in)',        format: v => v.toFixed(1) },
   hIn:  { label: 'Height (in)',       format: v => v.toFixed(1) },
+  hz:   { label: 'Refresh Rate (Hz)', format: v => v.toFixed(0) },
 };
 
 function getVal(m, key) { return m[key]; }
@@ -789,7 +790,8 @@ function showTooltipForDot(dot, m) {
     'Diagonal: ' + m.diag + '"<br>' +
     'Area: ' + m.area.toFixed(0) + ' in&sup2;<br>' +
     'PPI: ' + m.ppi.toFixed(0) + '<br>' +
-    'Aspect Ratio: ' + m.ar.toFixed(2);
+    'Aspect Ratio: ' + m.ar.toFixed(2) + '<br>' +
+    'Refresh Rate: ' + m.hz + ' Hz';
 }
 
 function unpinDot() {
@@ -1084,6 +1086,10 @@ function buildMonitorPanel() {
 
   panel.appendChild(list);
   container.appendChild(panel);
+
+  // Move entire monitor panel before the panels-row so it spans full width
+  const panelsRow = container.parentElement;
+  panelsRow.before(container);
 }
 
 // Filter panel
@@ -1119,6 +1125,9 @@ function buildFilterPanel() {
     { heading: 'Density / Ratio', filters: [
       { key: 'ppi',  label: 'PPI',               step: 1,    decimals: 0 },
       { key: 'ar',   label: 'Aspect Ratio',      step: 0.01, decimals: 2 },
+    ]},
+    { heading: 'Other', filters: [
+      { key: 'hz',   label: 'Refresh Rate (Hz)', step: 1,    decimals: 0 },
     ]},
   ];
 
@@ -1650,6 +1659,7 @@ const AXIS_GROUPS = [
   { label: 'Resolution', keys: ['w', 'h', 'mp'] },
   { label: 'Physical Size', keys: ['wIn', 'hIn', 'diag', 'area'] },
   { label: 'Density / Ratio', keys: ['ppi', 'ar'] },
+  { label: 'Other', keys: ['hz'] },
 ];
 
 function buildAxisSelect(selectedKey) {
