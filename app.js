@@ -271,35 +271,9 @@ function updateRatioLines() {
     line.setAttribute('x2', sx2);
     line.setAttribute('y2', sy2);
 
-    // Position label where it's furthest from any visible dot
-    const dotPositions = [];
-    monitors.forEach((m, i) => {
-      if (visibleMonitors.has(i)) dotPositions.push({ x: xPos(m.w), y: yPos(m.h) });
-    });
-
-    let bestT = 0.85, bestDist = -1;
-    for (let t = 0.15; t <= 0.9; t += 0.05) {
-      const cw = xRange.min + (xRange.max - xRange.min) * t;
-      const ch = cw / data.r;
-      const cx = xPos(cw), cy = yPos(ch);
-      if (cy < 10 || cy > H - 10) continue;
-      let minDist = Infinity;
-      for (const dp of dotPositions) {
-        const d = Math.hypot(cx - dp.x, cy - dp.y);
-        if (d < minDist) minDist = d;
-      }
-      if (minDist > bestDist) { bestDist = minDist; bestT = t; }
-    }
-
-    // Offset label perpendicular to the line
-    const labelW = xRange.min + (xRange.max - xRange.min) * bestT;
-    const labelH = labelW / data.r;
-    const dx = sx2 - sx1, dy = sy2 - sy1;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len, ny = dx / len;
-    const offset = 12;
-    label.style.left = (xPos(labelW) + nx * offset) + 'px';
-    label.style.top = (yPos(labelH) + ny * offset - 8) + 'px';
+    // Place label at the right edge where the line exits the chart
+    label.style.left = (sx2 + 6) + 'px';
+    label.style.top = (sy2 - 6) + 'px';
   });
 }
 
@@ -313,29 +287,43 @@ function createMpCurves() {
     path.setAttribute('fill', 'none');
     refSvg.appendChild(path);
 
-    mpCurveEls.push({ path, data: curve });
+    const lbl = document.createElement('div');
+    lbl.className = 'curve-label';
+    lbl.style.color = curve.color;
+    lbl.style.opacity = '0.4';
+    lbl.textContent = curve.name;
+    chartArea.appendChild(lbl);
+
+    mpCurveEls.push({ path, label: lbl, data: curve });
   });
 }
 
 function updateMpCurves() {
-  mpCurveEls.forEach(({ path, data }) => {
+  mpCurveEls.forEach(({ path, label, data }) => {
     const k = data.w * data.h;
-    // Use fixed number of samples across the full x range
     const pts = [];
+    let lastVisible = null;
     for (let i = 0; i <= CURVE_SAMPLES; i++) {
       const t = i / CURVE_SAMPLES;
       const px = xRange.min + t * (xRange.max - xRange.min);
       const py = k / px;
       const sx = xPos(px);
       const sy = yPos(py);
-      // Clamp to chart bounds
-      pts.push({ sx: Math.max(0, Math.min(W, sx)), sy: Math.max(0, Math.min(H, sy)) });
+      const csx = Math.max(0, Math.min(W, sx));
+      const csy = Math.max(0, Math.min(H, sy));
+      pts.push({ sx: csx, sy: csy });
+      if (sy >= 0 && sy <= H && sx >= 0 && sx <= W) lastVisible = { sx, sy };
     }
     let d = 'M ' + pts[0].sx.toFixed(1) + ' ' + pts[0].sy.toFixed(1);
     for (let i = 1; i < pts.length; i++) {
       d += ' L ' + pts[i].sx.toFixed(1) + ' ' + pts[i].sy.toFixed(1);
     }
     path.setAttribute('d', d);
+
+    // Position label at right edge where curve exits
+    const ep = lastVisible || pts[pts.length - 1];
+    label.style.left = (ep.sx + 6) + 'px';
+    label.style.top = (ep.sy - 6) + 'px';
   });
 }
 
