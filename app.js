@@ -220,7 +220,6 @@ function createRatioLines() {
     line.setAttribute('stroke-opacity', '0.25');
     line.setAttribute('stroke-width', '1.5');
     line.setAttribute('stroke-dasharray', '6 4');
-    line.style.transition = 'x1 0.35s ease, y1 0.35s ease, x2 0.35s ease, y2 0.35s ease';
     refSvg.appendChild(line);
 
     const lbl = document.createElement('div');
@@ -259,10 +258,10 @@ function updateRatioLines() {
     const sx1 = xPos(x1d), sy1 = yPos(y1d);
     const sx2 = xPos(x2d), sy2 = yPos(y2d);
 
-    line.style.x1 = sx1 + 'px';
-    line.style.y1 = sy1 + 'px';
-    line.style.x2 = sx2 + 'px';
-    line.style.y2 = sy2 + 'px';
+    line.setAttribute('x1', sx1);
+    line.setAttribute('y1', sy1);
+    line.setAttribute('x2', sx2);
+    line.setAttribute('y2', sy2);
 
     // Position label near the upper end of the line
     const t = 0.88;
@@ -281,7 +280,6 @@ function createMpCurves() {
     path.setAttribute('stroke-width', '1.2');
     path.setAttribute('stroke-dasharray', '3 3');
     path.setAttribute('fill', 'none');
-    path.style.transition = 'd 0.35s ease';
     refSvg.appendChild(path);
 
     mpCurveEls.push({ path, data: curve });
@@ -502,30 +500,22 @@ function updateVisibility() {
   rerender();
 }
 
+let animationId = null;
+const ANIM_DURATION = 350;
+
 function rerender() {
-  // Recompute ranges based on visible monitors only
+  // Compute target ranges
   const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
+  let targetX, targetY;
   if (visMonitors.length === 0) {
-    xRange = { min: 0, max: 8000 };
-    yRange = { min: 0, max: 5000 };
+    targetX = { min: 0, max: 8000 };
+    targetY = { min: 0, max: 5000 };
   } else {
-    xRange = niceRange(visMonitors.map(m => m.w), 0.15);
-    yRange = niceRange(visMonitors.map(m => m.h), 0.15);
+    targetX = niceRange(visMonitors.map(m => m.w), 0.15);
+    targetY = niceRange(visMonitors.map(m => m.h), 0.15);
   }
 
-  measureChart();
-
-  // Rebuild grid (snaps instantly -- that's fine)
-  drawGrid();
-
-  // Update persistent reference lines (CSS transitions animate them)
-  updateRatioLines();
-  updateMpCurves();
-
-  // Reposition existing dots and clusters (CSS transitions animate them)
-  positionDots();
-
-  // Apply visibility
+  // Apply visibility immediately
   monitors.forEach((_, i) => {
     const show = visibleMonitors.has(i);
     dotEls[i].style.display = show ? '' : 'none';
@@ -547,6 +537,46 @@ function rerender() {
       resLabelEls[key].style.display = visCount === 0 ? 'none' : '';
     }
   });
+
+  // Disable CSS transitions on dots/labels/badges during JS animation
+  chartArea.classList.add('animating');
+
+  const startX = { min: xRange.min, max: xRange.max };
+  const startY = { min: yRange.min, max: yRange.max };
+  const startTime = performance.now();
+
+  if (animationId) cancelAnimationFrame(animationId);
+
+  function tick(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / ANIM_DURATION);
+    // Ease out cubic
+    const e = 1 - Math.pow(1 - t, 3);
+
+    xRange = {
+      min: startX.min + (targetX.min - startX.min) * e,
+      max: startX.max + (targetX.max - startX.max) * e,
+    };
+    yRange = {
+      min: startY.min + (targetY.min - startY.min) * e,
+      max: startY.max + (targetY.max - startY.max) * e,
+    };
+
+    measureChart();
+    drawGrid();
+    updateRatioLines();
+    updateMpCurves();
+    positionDots();
+
+    if (t < 1) {
+      animationId = requestAnimationFrame(tick);
+    } else {
+      animationId = null;
+      chartArea.classList.remove('animating');
+    }
+  }
+
+  animationId = requestAnimationFrame(tick);
 }
 
 function render() {

@@ -86,6 +86,14 @@ h1 + .outer-wrapper {
   white-space: nowrap;
 }
 
+.chart-area.animating .dot,
+.chart-area.animating .monitor-label,
+.chart-area.animating .cluster-badge,
+.chart-area.animating .cluster-res-label,
+.chart-area.animating .ratio-label {
+  transition: none;
+}
+
 /* Grid */
 .grid-line-h,
 .grid-line-v { position: absolute; background: #1e2030; }
