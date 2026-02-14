@@ -141,16 +141,16 @@ function positionDots() {
         labelEls[mi].style.zIndex = '6';
 
         const dx = offsets[j].dx, dy = offsets[j].dy;
-        let lx = x + dx * 1.1, ly = y + dy * 1.1;
+        let lx = x, ly = y;
         labelEls[mi].style.transform = '';
         if (dx < -3) {
           labelEls[mi].style.transform = 'translateX(-100%)';
-          lx -= 4;
+          lx -= 8;
         } else {
           lx += 8;
         }
         if (dy > 3) ly += 8;
-        else if (dy < -3) ly -= 14;
+        else if (dy < -3) ly -= 12;
         else ly -= 4;
         labelEls[mi].style.left = lx + 'px';
         labelEls[mi].style.top = ly + 'px';
