@@ -25,6 +25,8 @@ const AXES = {
   diag: { label: 'Diagonal (in)',     format: v => v.toFixed(1) },
   mp:   { label: 'Megapixels',        format: v => v.toFixed(1) },
   area: { label: 'Screen Area (in²)', format: v => v.toFixed(0) },
+  wIn:  { label: 'Width (in)',        format: v => v.toFixed(1) },
+  hIn:  { label: 'Height (in)',       format: v => v.toFixed(1) },
 };
 
 function getVal(m, key) { return m[key]; }
@@ -574,7 +576,7 @@ function showTooltipForDot(dot, m) {
   ttDetail.innerHTML =
     'Resolution: ' + m.w + ' x ' + m.h + '<br>' +
     'Diagonal: ' + m.diag + '"<br>' +
-    'Area: ' + m.area.toFixed(0) + ' in&sup2;<br>' +
+    'Size: ' + m.wIn.toFixed(1) + '" x ' + m.hIn.toFixed(1) + '" (' + m.area.toFixed(0) + ' in&sup2;)<br>' +
     'PPI: ' + m.ppi.toFixed(0) + '<br>' +
     'Total: ' + m.mp.toFixed(1) + ' MP<br>' +
     'Aspect: ' + m.ar.toFixed(2) + ' (' + m.w + ':' + m.h + ')';
@@ -862,6 +864,8 @@ function buildFilterPanel() {
     { key: 'diag', label: 'Diagonal (in)',      step: 0.1,  decimals: 1 },
     { key: 'mp',   label: 'Megapixels',        step: 0.1,  decimals: 1 },
     { key: 'area', label: 'Screen Area (in²)', step: 1,    decimals: 0 },
+    { key: 'wIn',  label: 'Width (in)',        step: 0.1,  decimals: 1 },
+    { key: 'hIn',  label: 'Height (in)',       step: 0.1,  decimals: 1 },
   ];
 
   filterDefs.forEach(({ key, label, step, decimals }) => {
@@ -1447,7 +1451,10 @@ async function init() {
   monitors.forEach(m => {
     m.ppi = Math.sqrt(m.w * m.w + m.h * m.h) / m.diag;
     m.mp = (m.w * m.h) / 1e6;
-    m.area = m.diag * m.diag * (m.w * m.h) / (m.w * m.w + m.h * m.h);
+    const hyp = Math.sqrt(m.w * m.w + m.h * m.h);
+    m.wIn = m.diag * m.w / hyp;
+    m.hIn = m.diag * m.h / hyp;
+    m.area = m.wIn * m.hIn;
     m.ar = m.w / m.h;
   });
 
