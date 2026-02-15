@@ -7,6 +7,7 @@
     { "name": "Apple Pro Display XDR 32\"", "w": 6016, "h": 3384, "diag": 32, "hz": 60, "panel": "IPS LED", "cat": "6k", "shortName": "Pro Display XDR" },
     { "name": "ASUS ProArt PA32KCX 32\" 8K", "w": 7680, "h": 4320, "diag": 31.5, "hz": 60, "panel": "Mini-LED IPS", "cat": "8k", "shortName": "ASUS 8K", "upcoming": true },
     { "name": "ViewSonic VG3281-8K 32\"", "w": 7680, "h": 4320, "diag": 31.5, "hz": 60, "panel": "IPS", "cat": "8k", "shortName": "ViewSonic 8K", "upcoming": true },
+    { "name": "Dell UltraSharp U2725QE 27\"", "w": 3840, "h": 2160, "diag": 27, "hz": 120, "panel": "IPS Black", "cat": "4k", "shortName": "Dell U2725QE" },
     { "name": "ASUS ROG Swift OLED PG27UCWM 27\"", "w": 3840, "h": 2160, "diag": 27, "hz": 240, "panel": "Tandem W-OLED", "cat": "4k", "shortName": "PG27UCWM", "upcoming": true },
     { "name": "LG OLED42C5 42\"", "w": 3840, "h": 2160, "diag": 41.5, "hz": 144, "panel": "W-OLED", "cat": "4k", "shortName": "LG 42C5" },
     { "name": "Dell UltraSharp U5226KW 52\"", "w": 6144, "h": 2560, "diag": 52, "hz": 120, "panel": "IPS Black", "cat": "ultrawide-6k", "shortName": "Dell 52\" 6K" },
