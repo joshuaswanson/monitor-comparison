@@ -357,7 +357,7 @@ function positionDots() {
 
 const LEGEND_GROUPS = [
   { label: 'Reference', cats: ['joshua-monitor', 'macbook'] },
-  { label: 'Standard', cats: ['apple-ext', '8k'] },
+  { label: 'Standard', cats: ['apple-ext', '8k', '4k-standard'] },
   { label: 'Ultrawide', cats: ['ultrawide-6k', 'ultrawide-high', 'ultrawide-mid', 'ultrawide-low', 'ultrawide-entry'] },
   { label: 'Super Ultrawide', cats: ['super-ultra'] },
 ];
@@ -579,20 +579,23 @@ function createMpCurves() {
   });
 }
 
-function drawHyperbola(k, path, label) {
+function drawCurve(fn, path, label, labelAtEnd) {
   label.style.display = '';
   let d = '';
   let firstVisible = null;
+  let lastVisible = null;
   for (let j = 0; j <= CURVE_SAMPLES; j++) {
     const t = j / CURVE_SAMPLES;
     const px = xRange.min + t * (xRange.max - xRange.min);
-    const py = k / px;
+    const py = fn(px);
+    if (!isFinite(py)) continue;
     const sx = xPos(px);
     const sy = yPos(py);
     const inBounds = sy >= 0 && sy <= H && sx >= 0 && sx <= W;
     if (inBounds) {
       d += (d ? ' L ' : 'M ') + sx.toFixed(1) + ' ' + sy.toFixed(1);
       if (!firstVisible) firstVisible = { sx, sy };
+      lastVisible = { sx, sy };
     } else if (d) {
       // Clamp one final point to edge so line exits cleanly
       const csx = Math.max(0, Math.min(W, sx));
@@ -603,9 +606,10 @@ function drawHyperbola(k, path, label) {
   }
   path.setAttribute('d', d || 'M -100 -100');
 
-  if (firstVisible) {
-    label.style.left = (firstVisible.sx + 6) + 'px';
-    label.style.top = (firstVisible.sy - 18) + 'px';
+  const anchor = labelAtEnd ? lastVisible : firstVisible;
+  if (anchor) {
+    label.style.left = (anchor.sx + 6) + 'px';
+    label.style.top = (anchor.sy - 6) + 'px';
   } else {
     label.style.display = 'none';
   }
@@ -614,14 +618,25 @@ function drawHyperbola(k, path, label) {
 function updateMpCurves() {
   const whAxes = new Set(['w', 'h']);
   const isWH = whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
+  const isAreaPpi = (xAxisKey === 'area' && yAxisKey === 'ppi') ||
+                    (xAxisKey === 'ppi' && yAxisKey === 'area');
 
   mpCurveEls.forEach(({ path, label, data }, i) => {
-    if (!mpEnabled.has(i) || !isWH) {
+    if (!mpEnabled.has(i) || (!isWH && !isAreaPpi)) {
       path.setAttribute('d', 'M -100 -100');
       label.style.display = 'none';
       return;
     }
-    drawHyperbola(data.w * data.h, path, label);
+    const totalPx = data.w * data.h;
+    if (isWH) {
+      drawCurve(x => totalPx / x, path, label);
+    } else if (xAxisKey === 'area') {
+      // ppi = sqrt(totalPixels / area)
+      drawCurve(area => Math.sqrt(totalPx / area), path, label, true);
+    } else {
+      // area = totalPixels / ppi^2
+      drawCurve(ppi => totalPx / (ppi * ppi), path, label, true);
+    }
   });
 }
 
@@ -656,7 +671,7 @@ function updateAreaCurves() {
       label.style.display = 'none';
       return;
     }
-    drawHyperbola(data.area, path, label);
+    drawCurve(x => data.area / x, path, label);
   });
 }
 
@@ -1571,7 +1586,9 @@ function updateLabelMargin() {
                    (xAxisKey === 'mp' && yAxisKey === 'area');
   const hasArea = areaEnabled.size > 0;
   const hasPpi = ppiEnabled.size > 0;
-  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea)) || (isAreaMp && hasPpi);
+  const isAreaPpi = (xAxisKey === 'area' && yAxisKey === 'ppi') ||
+                    (xAxisKey === 'ppi' && yAxisKey === 'area');
+  const needsMargin = (isWH && (hasRatio || hasMp)) || (hasAr && hasRatio) || (isWInHIn && (hasRatio || hasArea)) || (isAreaMp && hasPpi) || (isAreaPpi && hasMp);
   chartArea.style.right = needsMargin ? labelMarginRight + 'px' : '20px';
   measureChart();
 }
