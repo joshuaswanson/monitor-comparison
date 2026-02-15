@@ -200,12 +200,14 @@ h1 + .axis-controls {
 
 .dot.cat-joshua-monitor  { background: #f472b6; box-shadow: 0 0 10px #f472b666; }
 .dot.cat-macbook         { background: #f5a623; box-shadow: 0 0 10px #f5a62366; }
-.dot.cat-apple-ext       { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
+.dot.cat-4k              { background: #38bdf8; box-shadow: 0 0 10px #38bdf866; }
+.dot.cat-5k              { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
+.dot.cat-6k              { background: #c084fc; box-shadow: 0 0 10px #c084fc66; }
+.dot.cat-8k              { background: #e879f9; box-shadow: 0 0 10px #e879f966; }
 .dot.cat-ultrawide-high  { background: #34d399; box-shadow: 0 0 10px #34d39966; }
 .dot.cat-ultrawide-mid   { background: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
 .dot.cat-ultrawide-low   { background: #f87171; box-shadow: 0 0 10px #f8717166; }
 .dot.cat-super-ultra     { background: #fb923c; box-shadow: 0 0 10px #fb923c66; }
-.dot.cat-8k              { background: #e879f9; box-shadow: 0 0 10px #e879f966; }
 .dot.cat-ultrawide-6k    { background: #2dd4bf; box-shadow: 0 0 10px #2dd4bf66; }
 .dot.cat-ultrawide-entry { background: #fbbf24; box-shadow: 0 0 10px #fbbf2466; }
 
@@ -215,9 +217,11 @@ h1 + .axis-controls {
   width: 13px;
   height: 13px;
 }
+.dot.upcoming.cat-4k             { border-color: #38bdf8; box-shadow: 0 0 10px #38bdf866; }
+.dot.upcoming.cat-5k             { border-color: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
+.dot.upcoming.cat-6k             { border-color: #c084fc; box-shadow: 0 0 10px #c084fc66; }
 .dot.upcoming.cat-8k             { border-color: #e879f9; box-shadow: 0 0 10px #e879f966; }
 .dot.upcoming.cat-ultrawide-high { border-color: #34d399; box-shadow: 0 0 10px #34d39966; }
-.dot.upcoming.cat-apple-ext      { border-color: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
 .dot.upcoming.cat-ultrawide-mid  { border-color: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
 .dot.upcoming.cat-ultrawide-low  { border-color: #f87171; box-shadow: 0 0 10px #f8717166; }
 .dot.upcoming.cat-super-ultra    { border-color: #fb923c; box-shadow: 0 0 10px #fb923c66; }
@@ -432,6 +436,12 @@ h1 + .axis-controls {
 .monitor-checkbox-label input[type="checkbox"] {
   accent-color: #7a7a8e;
   cursor: pointer;
+}
+
+.unreleased-tag {
+  color: #555;
+  font-size: 0.6rem;
+  margin-left: 2px;
 }
 
 
