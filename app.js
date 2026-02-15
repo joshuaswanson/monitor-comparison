@@ -19,7 +19,7 @@ let ppiEnabled = new Set();
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
 // Axis switching state
-let xAxisKey = 'w', yAxisKey = 'h';
+let xAxisKey = 'area', yAxisKey = 'ppi';
 
 const AXES = {
   w:    { label: 'Horizontal Pixels', format: v => v.toFixed(0) },
@@ -1013,12 +1013,37 @@ function createClusters() {
 
 const checkboxEls = [];
 const catCheckboxEls = {};
+let allMonitorsCb = null;
 
 function buildMonitorPanel() {
   const container = document.getElementById('monitorPanel');
   container.innerHTML = '';
   const panel = document.createElement('div');
   panel.className = 'monitor-panel';
+
+  const allLabel = document.createElement('label');
+  allLabel.className = 'monitor-list-category-title monitor-list-all';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  const allCount = monitors.filter((_, i) => visibleMonitors.has(i)).length;
+  allCb.checked = allCount > 0;
+  allCb.indeterminate = allCount > 0 && allCount < monitors.length;
+  allCb.addEventListener('change', () => {
+    monitors.forEach((_, i) => {
+      if (allCb.checked) visibleMonitors.add(i);
+      else visibleMonitors.delete(i);
+      if (checkboxEls[i]) checkboxEls[i].checked = allCb.checked;
+    });
+    Object.values(catCheckboxEls).forEach(cb => {
+      cb.checked = allCb.checked;
+      cb.indeterminate = false;
+    });
+    updateVisibility();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode('Show all'));
+  panel.appendChild(allLabel);
+  allMonitorsCb = allCb;
 
   const list = document.createElement('div');
   list.className = 'monitor-list open';
@@ -1404,6 +1429,13 @@ function updateVisibility() {
     catCheckboxEls[catKey].indeterminate = checkedCount > 0 && checkedCount < indices.length;
   });
 
+  // Sync "Show all" checkbox
+  if (allMonitorsCb) {
+    const totalChecked = monitors.filter((_, i) => checkboxEls[i] && checkboxEls[i].checked).length;
+    allMonitorsCb.checked = totalChecked > 0;
+    allMonitorsCb.indeterminate = totalChecked > 0 && totalChecked < monitors.length;
+  }
+
   // Rebuild groups preserving expanded state
   const wasExpanded = new Set();
   Object.values(groups).forEach(group => {
@@ -1500,8 +1532,8 @@ function rerender() {
   const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
   let targetX, targetY;
   if (visMonitors.length === 0) {
-    targetX = { min: 0, max: 8000 };
-    targetY = { min: 0, max: 5000 };
+    targetX = { min: xRange.min, max: xRange.max };
+    targetY = { min: yRange.min, max: yRange.max };
   } else {
     targetX = niceRange(visMonitors.map(m => getVal(m, xAxisKey)), 0.15);
     targetY = niceRange(visMonitors.map(m => getVal(m, yAxisKey)), 0.15);
