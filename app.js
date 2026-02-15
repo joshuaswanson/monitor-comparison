@@ -357,7 +357,7 @@ function positionDots() {
 
 const LEGEND_GROUPS = [
   { label: 'Reference', cats: ['joshua-monitor', 'macbook'] },
-  { label: 'Standard', cats: ['apple-ext', '8k', '4k-standard'] },
+  { label: 'Standard', cats: ['4k', '5k', '6k', '8k'] },
   { label: 'Ultrawide', cats: ['ultrawide-6k', 'ultrawide-high', 'ultrawide-mid', 'ultrawide-low', 'ultrawide-entry'] },
   { label: 'Super Ultrawide', cats: ['super-ultra'] },
 ];
@@ -1072,6 +1072,12 @@ function buildMonitorPanel() {
       catDot.style.background = cat.color;
       label.appendChild(catDot);
       label.appendChild(document.createTextNode(monitors[i].shortName));
+      if (monitors[i].upcoming) {
+        const tag = document.createElement('span');
+        tag.className = 'unreleased-tag';
+        tag.textContent = '(unreleased)';
+        label.appendChild(tag);
+      }
       checkboxEls[i] = cb;
       catCheckboxEls[catKey] = cb;
       list.appendChild(label);
@@ -1127,6 +1133,12 @@ function buildMonitorPanel() {
       });
       label.appendChild(cb);
       label.appendChild(document.createTextNode(monitors[i].shortName));
+      if (monitors[i].upcoming) {
+        const tag = document.createElement('span');
+        tag.className = 'unreleased-tag';
+        tag.textContent = '(unreleased)';
+        label.appendChild(tag);
+      }
       items.appendChild(label);
       checkboxEls[i] = cb;
     });
@@ -1676,7 +1688,7 @@ async function init() {
   });
 
   visibleMonitors = new Set();
-  monitors.forEach((m, i) => { if (m.default) visibleMonitors.add(i); });
+  monitors.forEach((m, i) => { if (!m.upcoming) visibleMonitors.add(i); });
 
   // Initialize enabled sets from defaults
   ratioLines.forEach((rl, i) => { if (rl.default) ratioEnabled.add(i); });
