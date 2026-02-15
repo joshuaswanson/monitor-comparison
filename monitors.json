@@ -28,7 +28,9 @@
     { "name": "Lenovo P49w-30 49\"", "w": 5120, "h": 1440, "diag": 49, "hz": 60, "panel": "IPS Black", "cat": "super-ultra", "shortName": "Lenovo 49\"" },
     { "name": "MSI MPG 491CQPX 49\" QD-OLED", "w": 5120, "h": 1440, "diag": 49, "hz": 240, "panel": "QD-OLED", "cat": "super-ultra", "shortName": "MSI 491CQPX" },
     { "name": "Samsung Odyssey OLED G9 49\" (G93SD)", "w": 5120, "h": 1440, "diag": 49, "hz": 240, "panel": "QD-OLED", "cat": "super-ultra", "shortName": "OLED G9 G93SD" },
+    { "name": "Dell UltraSharp U4323QE 43\" 4K", "w": 3840, "h": 2160, "diag": 42.51, "hz": 60, "panel": "IPS", "cat": "4k", "shortName": "Dell U4323QE" },
     { "name": "Samsung Odyssey Ark 55\"", "w": 3840, "h": 2160, "diag": 55, "hz": 165, "panel": "Mini-LED VA", "cat": "4k", "shortName": "Odyssey Ark 55\"" },
+    { "name": "Dell UltraSharp U4924DW 49\"", "w": 5120, "h": 1440, "diag": 49, "hz": 60, "panel": "IPS Black", "cat": "super-ultra", "shortName": "Dell U4924DW" },
     { "name": "Samsung Odyssey Neo G9 57\"", "w": 7680, "h": 2160, "diag": 57, "hz": 240, "panel": "Mini-LED VA", "cat": "super-ultra", "shortName": "Neo G9 57\"" }
   ],
   "ratioLines": [
