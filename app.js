@@ -355,30 +355,50 @@ function positionDots() {
   });
 }
 
+const LEGEND_GROUPS = [
+  { label: 'Reference', cats: ['joshua-monitor', 'macbook'] },
+  { label: 'Standard', cats: ['apple-ext', '8k'] },
+  { label: 'Ultrawide', cats: ['ultrawide-6k', 'ultrawide-high', 'ultrawide-mid', 'ultrawide-low', 'ultrawide-entry'] },
+  { label: 'Super Ultrawide', cats: ['super-ultra'] },
+];
+
+const CATEGORY_ORDER = LEGEND_GROUPS.flatMap(g => g.cats);
+
 function sortedCategories() {
   const grouped = {};
   monitors.forEach((m, i) => {
-    if (!grouped[m.cat]) grouped[m.cat] = { indices: [], totalMp: 0 };
+    if (!grouped[m.cat]) grouped[m.cat] = { indices: [] };
     grouped[m.cat].indices.push(i);
-    grouped[m.cat].totalMp += m.mp;
   });
-  return Object.entries(grouped)
-    .map(([key, g]) => ({ key, avgMp: g.totalMp / g.indices.length, indices: g.indices }))
-    .sort((a, b) => a.avgMp - b.avgMp);
+  return CATEGORY_ORDER
+    .filter(key => grouped[key])
+    .map(key => ({ key, indices: grouped[key].indices }));
 }
 
 function buildLegend() {
   legendContainer.innerHTML = '';
-  sortedCategories().forEach(({ key }) => {
-    const cat = categories[key];
-    const item = document.createElement('div');
-    item.className = 'legend-item';
-    const dot = document.createElement('div');
-    dot.className = 'legend-dot';
-    dot.style.background = cat.color;
-    item.appendChild(dot);
-    item.appendChild(document.createTextNode(cat.label));
-    legendContainer.appendChild(item);
+  const present = new Set(monitors.map(m => m.cat));
+  LEGEND_GROUPS.forEach(group => {
+    const cats = group.cats.filter(c => present.has(c));
+    if (cats.length === 0) return;
+    const section = document.createElement('div');
+    section.className = 'legend-group';
+    const heading = document.createElement('div');
+    heading.className = 'legend-group-heading';
+    heading.textContent = group.label;
+    section.appendChild(heading);
+    cats.forEach(key => {
+      const cat = categories[key];
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const dot = document.createElement('div');
+      dot.className = 'legend-dot';
+      dot.style.background = cat.color;
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(cat.label));
+      section.appendChild(item);
+    });
+    legendContainer.appendChild(section);
   });
 }
 
@@ -865,7 +885,7 @@ function buildGroups() {
     y: tmpYPos(getVal(m, yAxisKey)),
   }));
 
-  // Union-Find
+  // Union-Find -- only cluster visible monitors
   const parent = monitors.map((_, i) => i);
 
   function find(i) {
@@ -881,8 +901,10 @@ function buildGroups() {
     if (ra !== rb) parent[rb] = ra;
   }
 
-  for (let i = 0; i < monitors.length; i++) {
-    for (let j = i + 1; j < monitors.length; j++) {
+  const visArr = [...visibleMonitors];
+  for (let a = 0; a < visArr.length; a++) {
+    for (let b = a + 1; b < visArr.length; b++) {
+      const i = visArr[a], j = visArr[b];
       const dx = positions[i].x - positions[j].x;
       const dy = positions[i].y - positions[j].y;
       if (Math.sqrt(dx * dx + dy * dy) < CLUSTER_THRESHOLD) {
@@ -892,7 +914,7 @@ function buildGroups() {
   }
 
   const newGroups = {};
-  for (let i = 0; i < monitors.length; i++) {
+  for (const i of visibleMonitors) {
     const root = find(i);
     const key = 'g' + root;
     if (!newGroups[key]) newGroups[key] = { indices: [], expanded: false };
@@ -983,13 +1005,8 @@ function buildMonitorPanel() {
   const panel = document.createElement('div');
   panel.className = 'monitor-panel';
 
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'show/hide monitors <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
-
   const list = document.createElement('div');
-  list.className = 'monitor-list';
+  list.className = 'monitor-list open';
 
   sortedCategories().forEach(({ key: catKey, indices }) => {
     const cat = categories[catKey];
@@ -1000,7 +1017,7 @@ function buildMonitorPanel() {
       label.className = 'monitor-list-category-title';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.checked = true;
+      cb.checked = visibleMonitors.has(i);
       cb.addEventListener('change', () => {
         if (cb.checked) {
           visibleMonitors.add(i);
@@ -1028,7 +1045,9 @@ function buildMonitorPanel() {
     title.className = 'monitor-list-category-title';
     const catCb = document.createElement('input');
     catCb.type = 'checkbox';
-    catCb.checked = true;
+    const checkedCount = indices.filter(i => visibleMonitors.has(i)).length;
+    catCb.checked = checkedCount > 0;
+    catCb.indeterminate = checkedCount > 0 && checkedCount < indices.length;
     catCb.addEventListener('change', () => {
       indices.forEach(i => {
         if (catCb.checked) {
@@ -1057,7 +1076,7 @@ function buildMonitorPanel() {
       label.className = 'monitor-checkbox-label';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.checked = true;
+      cb.checked = visibleMonitors.has(i);
       cb.addEventListener('change', () => {
         if (cb.checked) {
           visibleMonitors.add(i);
@@ -1074,11 +1093,6 @@ function buildMonitorPanel() {
 
     section.appendChild(items);
     list.appendChild(section);
-  });
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
   });
 
   panel.appendChild(list);
@@ -1254,327 +1268,86 @@ function passesFilters(m) {
   return true;
 }
 
-function buildRatioPanel() {
-  const container = document.getElementById('ratioPanel');
+function buildRefLinesPanel() {
+  const container = document.getElementById('refLinesPanel');
   container.innerHTML = '';
 
   const panel = document.createElement('div');
-  panel.className = 'filter-panel';
+  panel.className = 'ref-lines-panel';
 
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'show/hide aspect ratio lines <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
+  const sections = [
+    { heading: 'Aspect Ratio', data: ratioLines, enabled: ratioEnabled,
+      onUpdate: () => { updateLabelMargin(); updateRatioLines(); avoidRefLabelOverlap(); } },
+    { heading: 'Megapixels', data: mpCurves, enabled: mpEnabled,
+      onUpdate: () => { updateLabelMargin(); updateMpCurves(); avoidRefLabelOverlap(); } },
+    { heading: 'Screen Area', data: areaCurves, enabled: areaEnabled,
+      onUpdate: () => { updateLabelMargin(); updateAreaCurves(); avoidRefLabelOverlap(); } },
+    { heading: 'PPI', data: ppiLines, enabled: ppiEnabled,
+      onUpdate: () => { updateLabelMargin(); updatePpiLines(); avoidRefLabelOverlap(); } },
+  ];
 
-  const list = document.createElement('div');
-  list.className = 'ref-list';
+  sections.forEach(({ heading, data, enabled, onUpdate }) => {
+    const section = document.createElement('div');
+    section.className = 'ref-lines-section';
 
-  const allLabel = document.createElement('label');
-  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
-  const allCb = document.createElement('input');
-  allCb.type = 'checkbox';
-  allCb.checked = ratioEnabled.size > 0;
-  allCb.indeterminate = ratioEnabled.size > 0 && ratioEnabled.size < ratioLines.length;
-  list.appendChild(allLabel);
+    const headingEl = document.createElement('div');
+    headingEl.className = 'ref-lines-heading';
 
-  const items = document.createElement('div');
-  items.className = 'ref-list-items narrow';
+    const headingText = document.createElement('span');
+    headingText.textContent = heading;
+    headingEl.appendChild(headingText);
 
-  const ratioCbs = [];
-  ratioLines.forEach((rl, i) => {
-    const label = document.createElement('label');
-    label.className = 'monitor-checkbox-label';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = ratioEnabled.has(i);
-    cb.addEventListener('change', () => {
-      if (cb.checked) {
-        ratioEnabled.add(i);
-      } else {
-        ratioEnabled.delete(i);
-      }
-      allCb.checked = ratioEnabled.size > 0;
-      allCb.indeterminate = ratioEnabled.size > 0 && ratioEnabled.size < ratioLines.length;
-      updateLabelMargin();
-      updateRatioLines();
-      avoidRefLabelOverlap();
+    const allCb = document.createElement('input');
+    allCb.type = 'checkbox';
+    allCb.checked = enabled.size > 0;
+    allCb.indeterminate = enabled.size > 0 && enabled.size < data.length;
+    headingEl.appendChild(allCb);
+    const allText = document.createElement('span');
+    allText.className = 'ref-lines-all-label';
+    allText.textContent = 'all';
+    headingEl.appendChild(allText);
+
+    section.appendChild(headingEl);
+
+    const items = document.createElement('div');
+    items.className = 'ref-lines-items';
+
+    const cbs = [];
+    data.forEach((entry, i) => {
+      const label = document.createElement('label');
+      label.className = 'monitor-checkbox-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = enabled.has(i);
+      cb.addEventListener('change', () => {
+        if (cb.checked) { enabled.add(i); } else { enabled.delete(i); }
+        allCb.checked = enabled.size > 0;
+        allCb.indeterminate = enabled.size > 0 && enabled.size < data.length;
+        onUpdate();
+      });
+      cbs.push(cb);
+      label.appendChild(cb);
+      const dot = document.createElement('div');
+      dot.className = 'cat-dot';
+      dot.style.background = entry.color;
+      label.appendChild(dot);
+      label.appendChild(document.createTextNode(entry.name));
+      items.appendChild(label);
     });
-    ratioCbs.push(cb);
-    label.appendChild(cb);
-    const dot = document.createElement('div');
-    dot.className = 'cat-dot';
-    dot.style.background = rl.color;
-    label.appendChild(dot);
-    label.appendChild(document.createTextNode(rl.name));
-    items.appendChild(label);
-  });
 
-  allCb.addEventListener('change', () => {
-    ratioLines.forEach((_, i) => {
-      if (allCb.checked) {
-        ratioEnabled.add(i);
-      } else {
-        ratioEnabled.delete(i);
-      }
-      ratioCbs[i].checked = allCb.checked;
+    allCb.addEventListener('change', () => {
+      data.forEach((_, i) => {
+        if (allCb.checked) { enabled.add(i); } else { enabled.delete(i); }
+        cbs[i].checked = allCb.checked;
+      });
+      allCb.indeterminate = false;
+      onUpdate();
     });
-    allCb.indeterminate = false;
-    updateLabelMargin();
-    updateRatioLines();
-    avoidRefLabelOverlap();
-  });
-  allLabel.appendChild(allCb);
-  allLabel.appendChild(document.createTextNode('all'));
 
-  list.appendChild(items);
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
+    section.appendChild(items);
+    panel.appendChild(section);
   });
 
-  panel.appendChild(list);
-  container.appendChild(panel);
-}
-
-function buildMpPanel() {
-  const container = document.getElementById('mpPanel');
-  container.innerHTML = '';
-
-  const panel = document.createElement('div');
-  panel.className = 'filter-panel';
-
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'show/hide megapixel curves <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
-
-  const list = document.createElement('div');
-  list.className = 'ref-list';
-
-  const allLabel = document.createElement('label');
-  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
-  const allCb = document.createElement('input');
-  allCb.type = 'checkbox';
-  allCb.checked = mpEnabled.size > 0;
-  allCb.indeterminate = mpEnabled.size > 0 && mpEnabled.size < mpCurves.length;
-  list.appendChild(allLabel);
-
-  const items = document.createElement('div');
-  items.className = 'ref-list-items';
-
-  const mpCbs = [];
-  mpCurves.forEach((mc, i) => {
-    const label = document.createElement('label');
-    label.className = 'monitor-checkbox-label';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = mpEnabled.has(i);
-    cb.addEventListener('change', () => {
-      if (cb.checked) {
-        mpEnabled.add(i);
-      } else {
-        mpEnabled.delete(i);
-      }
-      allCb.checked = mpEnabled.size > 0;
-      allCb.indeterminate = mpEnabled.size > 0 && mpEnabled.size < mpCurves.length;
-      updateLabelMargin();
-      updateMpCurves();
-      avoidRefLabelOverlap();
-    });
-    mpCbs.push(cb);
-    label.appendChild(cb);
-    const dot = document.createElement('div');
-    dot.className = 'cat-dot';
-    dot.style.background = mc.color;
-    label.appendChild(dot);
-    label.appendChild(document.createTextNode(mc.name));
-    items.appendChild(label);
-  });
-
-  allCb.addEventListener('change', () => {
-    mpCurves.forEach((_, i) => {
-      if (allCb.checked) {
-        mpEnabled.add(i);
-      } else {
-        mpEnabled.delete(i);
-      }
-      mpCbs[i].checked = allCb.checked;
-    });
-    allCb.indeterminate = false;
-    updateLabelMargin();
-    updateMpCurves();
-    avoidRefLabelOverlap();
-  });
-  allLabel.appendChild(allCb);
-  allLabel.appendChild(document.createTextNode('all'));
-
-  list.appendChild(items);
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
-  });
-
-  panel.appendChild(list);
-  container.appendChild(panel);
-}
-
-function buildAreaPanel() {
-  const container = document.getElementById('areaPanel');
-  container.innerHTML = '';
-
-  const panel = document.createElement('div');
-  panel.className = 'filter-panel';
-
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'show/hide screen area curves <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
-
-  const list = document.createElement('div');
-  list.className = 'ref-list';
-
-  const allLabel = document.createElement('label');
-  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
-  const allCb = document.createElement('input');
-  allCb.type = 'checkbox';
-  allCb.checked = areaEnabled.size > 0;
-  allCb.indeterminate = areaEnabled.size > 0 && areaEnabled.size < areaCurves.length;
-  list.appendChild(allLabel);
-
-  const items = document.createElement('div');
-  items.className = 'ref-list-items narrow';
-
-  const areaCbs = [];
-  areaCurves.forEach((ac, i) => {
-    const label = document.createElement('label');
-    label.className = 'monitor-checkbox-label';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = areaEnabled.has(i);
-    cb.addEventListener('change', () => {
-      if (cb.checked) {
-        areaEnabled.add(i);
-      } else {
-        areaEnabled.delete(i);
-      }
-      allCb.checked = areaEnabled.size > 0;
-      allCb.indeterminate = areaEnabled.size > 0 && areaEnabled.size < areaCurves.length;
-      updateLabelMargin();
-      updateAreaCurves();
-      avoidRefLabelOverlap();
-    });
-    areaCbs.push(cb);
-    label.appendChild(cb);
-    const dot = document.createElement('div');
-    dot.className = 'cat-dot';
-    dot.style.background = ac.color;
-    label.appendChild(dot);
-    label.appendChild(document.createTextNode(ac.name));
-    items.appendChild(label);
-  });
-
-  allCb.addEventListener('change', () => {
-    areaCurves.forEach((_, i) => {
-      if (allCb.checked) {
-        areaEnabled.add(i);
-      } else {
-        areaEnabled.delete(i);
-      }
-      areaCbs[i].checked = allCb.checked;
-    });
-    allCb.indeterminate = false;
-    updateLabelMargin();
-    updateAreaCurves();
-    avoidRefLabelOverlap();
-  });
-  allLabel.appendChild(allCb);
-  allLabel.appendChild(document.createTextNode('all'));
-
-  list.appendChild(items);
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
-  });
-
-  panel.appendChild(list);
-  container.appendChild(panel);
-}
-
-function buildPpiPanel() {
-  const container = document.getElementById('ppiPanel');
-  container.innerHTML = '';
-
-  const panel = document.createElement('div');
-  panel.className = 'filter-panel';
-
-  const toggle = document.createElement('button');
-  toggle.className = 'panel-toggle';
-  toggle.innerHTML = 'show/hide PPI lines <span class="arrow">&#9662;</span>';
-  panel.appendChild(toggle);
-
-  const list = document.createElement('div');
-  list.className = 'ref-list';
-
-  const allLabel = document.createElement('label');
-  allLabel.className = 'monitor-checkbox-label ref-all-toggle';
-  const allCb = document.createElement('input');
-  allCb.type = 'checkbox';
-  allCb.checked = ppiEnabled.size > 0;
-  allCb.indeterminate = ppiEnabled.size > 0 && ppiEnabled.size < ppiLines.length;
-  list.appendChild(allLabel);
-
-  const items = document.createElement('div');
-  items.className = 'ref-list-items narrow';
-
-  const ppiCbs = [];
-  ppiLines.forEach((pl, i) => {
-    const label = document.createElement('label');
-    label.className = 'monitor-checkbox-label';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = ppiEnabled.has(i);
-    cb.addEventListener('change', () => {
-      if (cb.checked) { ppiEnabled.add(i); } else { ppiEnabled.delete(i); }
-      allCb.checked = ppiEnabled.size > 0;
-      allCb.indeterminate = ppiEnabled.size > 0 && ppiEnabled.size < ppiLines.length;
-      updateLabelMargin();
-      updatePpiLines();
-      avoidRefLabelOverlap();
-    });
-    ppiCbs.push(cb);
-    label.appendChild(cb);
-    const dot = document.createElement('div');
-    dot.className = 'cat-dot';
-    dot.style.background = pl.color;
-    label.appendChild(dot);
-    label.appendChild(document.createTextNode(pl.name));
-    items.appendChild(label);
-  });
-
-  allCb.addEventListener('change', () => {
-    ppiLines.forEach((_, i) => {
-      if (allCb.checked) { ppiEnabled.add(i); } else { ppiEnabled.delete(i); }
-      ppiCbs[i].checked = allCb.checked;
-    });
-    allCb.indeterminate = false;
-    updateLabelMargin();
-    updatePpiLines();
-    avoidRefLabelOverlap();
-  });
-  allLabel.appendChild(allCb);
-  allLabel.appendChild(document.createTextNode('all'));
-
-  list.appendChild(items);
-
-  toggle.addEventListener('click', () => {
-    list.classList.toggle('open');
-    toggle.classList.toggle('open');
-  });
-
-  panel.appendChild(list);
   container.appendChild(panel);
 }
 
@@ -1616,31 +1389,19 @@ function updateVisibility() {
     catCheckboxEls[catKey].indeterminate = checkedCount > 0 && checkedCount < indices.length;
   });
 
-  // Animate dots in expanded clusters only if that group's visible count changed
-  const animatingDots = [];
+  // Rebuild groups preserving expanded state
+  const wasExpanded = new Set();
   Object.values(groups).forEach(group => {
-    if (!group.expanded || group.indices.length <= 1) return;
-    const newVisCount = group.indices.filter(mi => visibleMonitors.has(mi)).length;
-    const oldVisCount = group._lastVisCount;
-    group._lastVisCount = newVisCount;
-    if (oldVisCount !== undefined && oldVisCount !== newVisCount) {
-      group.indices.forEach(mi => {
-        if (visibleMonitors.has(mi)) {
-          dotEls[mi].classList.add('fan-animate');
-          labelEls[mi].classList.add('fan-animate');
-          animatingDots.push(mi);
-        }
-      });
+    if (group.expanded) group.indices.forEach(i => wasExpanded.add(i));
+  });
+  destroyClusters();
+  groups = buildGroups();
+  Object.values(groups).forEach(group => {
+    if (group.indices.length > 1 && group.indices.some(i => wasExpanded.has(i))) {
+      group.expanded = true;
     }
   });
-  if (animatingDots.length > 0) {
-    setTimeout(() => {
-      animatingDots.forEach(mi => {
-        dotEls[mi].classList.remove('fan-animate');
-        labelEls[mi].classList.remove('fan-animate');
-      });
-    }, 400);
-  }
+  createClusters();
 
   rerender();
 }
@@ -1738,19 +1499,6 @@ function rerender() {
     labelEls[i].style.display = show ? '' : 'none';
   });
 
-  Object.entries(groups).forEach(([key, group]) => {
-    if (group.indices.length <= 1) return;
-    const visCount = group.indices.filter(i => visibleMonitors.has(i)).length;
-    if (badgeEls[key]) {
-      if (visCount <= 1) {
-        badgeEls[key].style.display = 'none';
-      } else {
-        badgeEls[key].style.display = '';
-        badgeEls[key].textContent = 'x' + visCount;
-      }
-    }
-  });
-
   const startX = { min: xRange.min, max: xRange.max };
   const startY = { min: yRange.min, max: yRange.max };
   const startTime = performance.now();
@@ -1843,6 +1591,15 @@ function render() {
   updatePpiLines();
   avoidRefLabelOverlap();
   createDots();
+
+  // Hide non-visible monitors
+  monitors.forEach((_, i) => {
+    if (!visibleMonitors.has(i)) {
+      dotEls[i].style.display = 'none';
+      labelEls[i].style.display = 'none';
+    }
+  });
+
   createClusters();
   positionDots();
 }
@@ -1869,7 +1626,8 @@ async function init() {
     m.ar = m.w / m.h;
   });
 
-  visibleMonitors = new Set(monitors.map((_, i) => i));
+  visibleMonitors = new Set();
+  monitors.forEach((m, i) => { if (m.default) visibleMonitors.add(i); });
 
   // Initialize enabled sets from defaults
   ratioLines.forEach((rl, i) => { if (rl.default) ratioEnabled.add(i); });
@@ -1883,10 +1641,7 @@ async function init() {
   buildAxisControls();
   buildMonitorPanel();
   buildFilterPanel();
-  buildRatioPanel();
-  buildMpPanel();
-  buildAreaPanel();
-  buildPpiPanel();
+  buildRefLinesPanel();
   buildLegend();
   render();
 }
