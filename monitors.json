@@ -1,7 +1,7 @@
 {
   "monitors": [
     {
-      "name": "Samsung SyncMaster SA850 27\" (Joshua's personal monitor)",
+      "name": "Samsung SyncMaster SA850 27\" (Joshua's home monitor)",
       "w": 2560,
       "h": 1440,
       "diag": 27,
@@ -414,7 +414,7 @@
   ],
   "categories": {
     "joshua-monitor": {
-      "label": "Joshua's Samsung SA850 personal (ref)",
+      "label": "Joshua's Samsung SA850 (ref)",
       "color": "#f472b6"
     },
     "joshua-work-monitor": {
