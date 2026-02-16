@@ -430,7 +430,7 @@ function positionDots() {
 const LEGEND_GROUPS = [
   {
     label: "Reference",
-    cats: ["joshua-monitor", "joshua-work-monitor", "macbook"],
+    cats: ["macbook", "joshua-monitor", "joshua-work-monitor"],
   },
   { label: "Standard", cats: ["4k", "5k", "6k", "8k"] },
   {
