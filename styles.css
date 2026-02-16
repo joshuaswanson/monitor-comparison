@@ -1,11 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 body {
   background: #0f1117;
   color: #e0e0e6;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -45,7 +49,7 @@ h1 + .axis-controls {
 
 .axis-control-group label {
   font-size: 0.72rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #7a7a8e;
   font-weight: 500;
 }
@@ -59,7 +63,7 @@ h1 + .axis-controls {
   border-radius: 6px;
   color: #c0c0d0;
   font-size: 0.7rem !important;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   padding: 4px 24px 4px 8px !important;
   cursor: pointer;
   outline: none;
@@ -147,15 +151,26 @@ h1 + .axis-controls {
 
 /* Grid */
 .grid-line-h,
-.grid-line-v { position: absolute; background: #1e2030; }
-.grid-line-h { left: 0; right: 0; height: 1px; }
-.grid-line-v { top: 0; bottom: 0; width: 1px; }
+.grid-line-v {
+  position: absolute;
+  background: #1e2030;
+}
+.grid-line-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+.grid-line-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
 
 /* Axis labels */
 .axis-label-y {
   position: absolute;
   font-size: 0.7rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #5a5a6e;
   text-align: right;
   right: 4px;
@@ -166,7 +181,7 @@ h1 + .axis-controls {
 .axis-label-x {
   position: absolute;
   font-size: 0.7rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #5a5a6e;
   transform: translateX(-50%);
   bottom: 8px;
@@ -184,32 +199,77 @@ h1 + .axis-controls {
   transition: transform 0.15s ease;
 }
 .dot:hover,
-.dot.pinned { transform: translate(-50%, -50%) scale(1.8); z-index: 10; }
+.dot.pinned {
+  transform: translate(-50%, -50%) scale(1.8);
+  z-index: 10;
+}
 
 .dot.fan-animate {
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.15s ease;
+  transition:
+    left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.15s ease;
 }
 
 .monitor-label.fan-animate {
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 0.25s ease;
+  transition:
+    left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.25s ease;
 }
 
-.dot.cat-joshua-monitor  { background: #f472b6; box-shadow: 0 0 10px #f472b666; }
-.dot.cat-macbook         { background: #f5a623; box-shadow: 0 0 10px #f5a62366; }
-.dot.cat-4k              { background: #38bdf8; box-shadow: 0 0 10px #38bdf866; }
-.dot.cat-5k              { background: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
-.dot.cat-6k              { background: #c084fc; box-shadow: 0 0 10px #c084fc66; }
-.dot.cat-8k              { background: #e879f9; box-shadow: 0 0 10px #e879f966; }
-.dot.cat-ultrawide-high  { background: #34d399; box-shadow: 0 0 10px #34d39966; }
-.dot.cat-ultrawide-mid   { background: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
-.dot.cat-ultrawide-low   { background: #f87171; box-shadow: 0 0 10px #f8717166; }
-.dot.cat-super-ultra     { background: #fb923c; box-shadow: 0 0 10px #fb923c66; }
-.dot.cat-ultrawide-6k    { background: #2dd4bf; box-shadow: 0 0 10px #2dd4bf66; }
-.dot.cat-ultrawide-entry { background: #fbbf24; box-shadow: 0 0 10px #fbbf2466; }
+.dot.cat-joshua-monitor {
+  background: #f472b6;
+  box-shadow: 0 0 10px #f472b666;
+}
+.dot.cat-joshua-work-monitor {
+  background: #22d3ee;
+  box-shadow: 0 0 10px #22d3ee66;
+}
+.dot.cat-macbook {
+  background: #f5a623;
+  box-shadow: 0 0 10px #f5a62366;
+}
+.dot.cat-4k {
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf866;
+}
+.dot.cat-5k {
+  background: #a78bfa;
+  box-shadow: 0 0 10px #a78bfa66;
+}
+.dot.cat-6k {
+  background: #c084fc;
+  box-shadow: 0 0 10px #c084fc66;
+}
+.dot.cat-8k {
+  background: #e879f9;
+  box-shadow: 0 0 10px #e879f966;
+}
+.dot.cat-ultrawide-high {
+  background: #34d399;
+  box-shadow: 0 0 10px #34d39966;
+}
+.dot.cat-ultrawide-mid {
+  background: #60a5fa;
+  box-shadow: 0 0 10px #60a5fa66;
+}
+.dot.cat-ultrawide-low {
+  background: #f87171;
+  box-shadow: 0 0 10px #f8717166;
+}
+.dot.cat-super-ultra {
+  background: #fb923c;
+  box-shadow: 0 0 10px #fb923c66;
+}
+.dot.cat-ultrawide-6k {
+  background: #2dd4bf;
+  box-shadow: 0 0 10px #2dd4bf66;
+}
+.dot.cat-ultrawide-entry {
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf2466;
+}
 
 .dot.upcoming {
   background: transparent !important;
@@ -217,22 +277,52 @@ h1 + .axis-controls {
   width: 13px;
   height: 13px;
 }
-.dot.upcoming.cat-4k             { border-color: #38bdf8; box-shadow: 0 0 10px #38bdf866; }
-.dot.upcoming.cat-5k             { border-color: #a78bfa; box-shadow: 0 0 10px #a78bfa66; }
-.dot.upcoming.cat-6k             { border-color: #c084fc; box-shadow: 0 0 10px #c084fc66; }
-.dot.upcoming.cat-8k             { border-color: #e879f9; box-shadow: 0 0 10px #e879f966; }
-.dot.upcoming.cat-ultrawide-high { border-color: #34d399; box-shadow: 0 0 10px #34d39966; }
-.dot.upcoming.cat-ultrawide-mid  { border-color: #60a5fa; box-shadow: 0 0 10px #60a5fa66; }
-.dot.upcoming.cat-ultrawide-low  { border-color: #f87171; box-shadow: 0 0 10px #f8717166; }
-.dot.upcoming.cat-super-ultra    { border-color: #fb923c; box-shadow: 0 0 10px #fb923c66; }
-.dot.upcoming.cat-ultrawide-6k   { border-color: #2dd4bf; box-shadow: 0 0 10px #2dd4bf66; }
-.dot.upcoming.cat-ultrawide-entry { border-color: #fbbf24; box-shadow: 0 0 10px #fbbf2466; }
+.dot.upcoming.cat-4k {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px #38bdf866;
+}
+.dot.upcoming.cat-5k {
+  border-color: #a78bfa;
+  box-shadow: 0 0 10px #a78bfa66;
+}
+.dot.upcoming.cat-6k {
+  border-color: #c084fc;
+  box-shadow: 0 0 10px #c084fc66;
+}
+.dot.upcoming.cat-8k {
+  border-color: #e879f9;
+  box-shadow: 0 0 10px #e879f966;
+}
+.dot.upcoming.cat-ultrawide-high {
+  border-color: #34d399;
+  box-shadow: 0 0 10px #34d39966;
+}
+.dot.upcoming.cat-ultrawide-mid {
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px #60a5fa66;
+}
+.dot.upcoming.cat-ultrawide-low {
+  border-color: #f87171;
+  box-shadow: 0 0 10px #f8717166;
+}
+.dot.upcoming.cat-super-ultra {
+  border-color: #fb923c;
+  box-shadow: 0 0 10px #fb923c66;
+}
+.dot.upcoming.cat-ultrawide-6k {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 10px #2dd4bf66;
+}
+.dot.upcoming.cat-ultrawide-entry {
+  border-color: #fbbf24;
+  box-shadow: 0 0 10px #fbbf2466;
+}
 
 /* Monitor labels */
 .monitor-label {
   position: absolute;
   font-size: 0.58rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #8a8a9e;
   white-space: nowrap;
   pointer-events: none;
@@ -245,7 +335,7 @@ h1 + .axis-controls {
   position: absolute;
   transform: translate(-50%, -50%);
   font-size: 0.6rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 700;
   color: #bbbbd0;
   background: #252740;
@@ -254,16 +344,21 @@ h1 + .axis-controls {
   padding: 2px 7px;
   cursor: pointer;
   z-index: 4;
-  transition: opacity 0.25s ease, pointer-events 0s;
+  transition:
+    opacity 0.25s ease,
+    pointer-events 0s;
   user-select: none;
 }
-.cluster-badge:hover { border-color: #6a6c8a; color: #e0e0f0; }
+.cluster-badge:hover {
+  border-color: #6a6c8a;
+  color: #e0e0f0;
+}
 
 .cluster-res-label {
   position: absolute;
   transform: translateX(-50%);
   font-size: 0.52rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #55556a;
   pointer-events: none;
   z-index: 1;
@@ -274,7 +369,7 @@ h1 + .axis-controls {
 .ratio-label {
   position: absolute;
   font-size: 0.68rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 500;
   white-space: nowrap;
   pointer-events: none;
@@ -284,7 +379,7 @@ h1 + .axis-controls {
 .curve-label {
   position: absolute;
   font-size: 0.68rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   white-space: nowrap;
   pointer-events: none;
   z-index: 0;
@@ -311,7 +406,7 @@ h1 + .axis-controls {
   font-size: 0.82rem;
 }
 .tooltip .tt-detail {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.68rem;
   color: #9a9aae;
   line-height: 1.7;
@@ -332,7 +427,7 @@ h1 + .axis-controls {
 }
 .legend-group-heading {
   font-size: 0.6rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 600;
   color: #55556a;
   text-transform: uppercase;
@@ -393,7 +488,7 @@ h1 + .axis-controls {
 
 .monitor-list-category-title {
   font-size: 0.72rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #9a9aae;
   margin-bottom: 5px;
   display: flex;
@@ -427,7 +522,7 @@ h1 + .axis-controls {
   align-items: center;
   gap: 5px;
   font-size: 0.68rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #7a7a8e;
   cursor: pointer;
   user-select: none;
@@ -443,7 +538,6 @@ h1 + .axis-controls {
   font-size: 0.6rem;
   margin-left: 2px;
 }
-
 
 /* Filter panel & ref toggle panels */
 .filter-panel {
@@ -580,7 +674,7 @@ h1 + .axis-controls {
 
 .filter-row-label {
   font-size: 0.68rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #9a9aae;
   width: 100%;
   flex-shrink: 0;
@@ -677,7 +771,7 @@ h1 + .axis-controls {
 
 .filter-value-label {
   font-size: 0.58rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #7a7a8e;
   min-width: 28px;
   text-align: center;
@@ -711,7 +805,7 @@ h1 + .axis-controls {
 
 .glossary dt {
   font-size: 0.78rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 600;
   color: #c0c0d0;
 }

@@ -1,55 +1,402 @@
 {
   "monitors": [
-    { "name": "Samsung SyncMaster SA850 27\" (Joshua's monitor)", "w": 2560, "h": 1440, "diag": 27, "hz": 60, "panel": "PLS", "cat": "joshua-monitor", "shortName": "SA850 27\"" },
-    { "name": "MacBook Pro 16\" M1 Max", "w": 3456, "h": 2234, "diag": 16.2, "hz": 120, "panel": "Mini-LED IPS", "cat": "macbook", "shortName": "MacBook Pro 16\"" },
-    { "name": "Apple iMac 24\" M4", "w": 4480, "h": 2520, "diag": 23.5, "hz": 60, "panel": "IPS", "cat": "5k", "shortName": "iMac 24\"" },
-    { "name": "Apple Studio Display 27\"", "w": 5120, "h": 2880, "diag": 27, "hz": 60, "panel": "IPS", "cat": "5k", "shortName": "Studio Display" },
-    { "name": "Apple Pro Display XDR 32\"", "w": 6016, "h": 3384, "diag": 32, "hz": 60, "panel": "IPS LED", "cat": "6k", "shortName": "Pro Display XDR" },
-    { "name": "ASUS ProArt PA32KCX 32\" 8K", "w": 7680, "h": 4320, "diag": 31.5, "hz": 60, "panel": "Mini-LED IPS", "cat": "8k", "shortName": "ASUS 8K", "upcoming": true },
-    { "name": "ViewSonic VG3281-8K 32\"", "w": 7680, "h": 4320, "diag": 31.5, "hz": 60, "panel": "IPS", "cat": "8k", "shortName": "ViewSonic 8K", "upcoming": true },
-    { "name": "Dell UltraSharp U2725QE 27\"", "w": 3840, "h": 2160, "diag": 27, "hz": 120, "panel": "IPS Black", "cat": "4k", "shortName": "Dell U2725QE" },
-    { "name": "ASUS ROG Swift OLED PG27UCWM 27\"", "w": 3840, "h": 2160, "diag": 27, "hz": 240, "panel": "Tandem W-OLED", "cat": "4k", "shortName": "PG27UCWM", "upcoming": true },
-    { "name": "LG OLED42C5 42\"", "w": 3840, "h": 2160, "diag": 41.5, "hz": 144, "panel": "W-OLED", "cat": "4k", "shortName": "LG 42C5" },
-    { "name": "Dell UltraSharp U5226KW 52\"", "w": 6144, "h": 2560, "diag": 52, "hz": 120, "panel": "IPS Black", "cat": "ultrawide-6k", "shortName": "Dell 52\" 6K" },
-    { "name": "LG 39GX950B 39\" 5K2K OLED", "w": 5120, "h": 2160, "diag": 38.5, "hz": 165, "panel": "Tandem W-OLED", "cat": "ultrawide-high", "shortName": "LG 39\" OLED", "upcoming": true },
-    { "name": "LG 40WP95C 40\" 5K2K", "w": 5120, "h": 2160, "diag": 40.0, "hz": 72, "panel": "Nano IPS", "cat": "ultrawide-high", "shortName": "LG 40WP95C" },
-    { "name": "Dell U4025QW 40\" 5K2K", "w": 5120, "h": 2160, "diag": 40, "hz": 120, "panel": "IPS Black", "cat": "ultrawide-high", "shortName": "Dell U4025QW" },
-    { "name": "LG 45GX950A 45\" 5K2K OLED", "w": 5120, "h": 2160, "diag": 44.5, "hz": 165, "panel": "W-OLED", "cat": "ultrawide-high", "shortName": "LG 45\" OLED" },
-    { "name": "LG 45GX990A 45\" 5K2K Bendable OLED", "w": 5120, "h": 2160, "diag": 44.5, "hz": 165, "panel": "W-OLED", "cat": "ultrawide-high", "shortName": "LG 45\" Bendable" },
-    { "name": "LG 52G930B 52\" 5K2K", "w": 5120, "h": 2160, "diag": 52, "hz": 240, "panel": "VA", "cat": "ultrawide-high", "shortName": "LG 52\" 5K2K", "upcoming": true },
-    { "name": "LG 38WR85QC 38\"", "w": 3840, "h": 1600, "diag": 37.5, "hz": 144, "panel": "Nano IPS", "cat": "ultrawide-mid", "shortName": "LG 38WR85QC" },
-    { "name": "Dell U3425WE 34\" Thunderbolt", "w": 3440, "h": 1440, "diag": 34.14, "hz": 120, "panel": "IPS Black", "cat": "ultrawide-low", "shortName": "Dell U3425WE" },
-    { "name": "Dell AW3425DW 34\" QD-OLED", "w": 3440, "h": 1440, "diag": 34.18, "hz": 240, "panel": "QD-OLED", "cat": "ultrawide-low", "shortName": "AW3425DW" },
-    { "name": "Gigabyte MO34WQC2 34\"", "w": 3440, "h": 1440, "diag": 34, "hz": 240, "panel": "QD-OLED", "cat": "ultrawide-low", "shortName": "Gigabyte 34\"" },
-    { "name": "ASUS ROG Swift OLED PG34WCDN 34\"", "w": 3440, "h": 1440, "diag": 34, "hz": 360, "panel": "QD-OLED", "cat": "ultrawide-low", "shortName": "PG34WCDN", "upcoming": true },
-    { "name": "MSI MPG 341CQR QD-OLED X36 34\"", "w": 3440, "h": 1440, "diag": 34, "hz": 360, "panel": "QD-OLED", "cat": "ultrawide-low", "shortName": "MSI 341CQR X36", "upcoming": true },
-    { "name": "LG 34WQ650-W 34\"", "w": 2560, "h": 1080, "diag": 34, "hz": 100, "panel": "IPS", "cat": "ultrawide-entry", "shortName": "LG 34\" 1080p" },
-    { "name": "INNOCN 44C1G 44\"", "w": 3840, "h": 1080, "diag": 43.8, "hz": 120, "panel": "IPS", "cat": "super-ultra", "shortName": "INNOCN 44C1G" },
-    { "name": "Lenovo P49w-30 49\"", "w": 5120, "h": 1440, "diag": 49, "hz": 60, "panel": "IPS Black", "cat": "super-ultra", "shortName": "Lenovo 49\"" },
-    { "name": "MSI MPG 491CQPX 49\" QD-OLED", "w": 5120, "h": 1440, "diag": 49, "hz": 240, "panel": "QD-OLED", "cat": "super-ultra", "shortName": "MSI 491CQPX" },
-    { "name": "Samsung Odyssey OLED G9 49\" (G93SD)", "w": 5120, "h": 1440, "diag": 49, "hz": 240, "panel": "QD-OLED", "cat": "super-ultra", "shortName": "OLED G9 G93SD" },
-    { "name": "Dell UltraSharp U4323QE 43\" 4K", "w": 3840, "h": 2160, "diag": 42.51, "hz": 60, "panel": "IPS", "cat": "4k", "shortName": "Dell U4323QE" },
-    { "name": "Samsung Odyssey Ark 55\"", "w": 3840, "h": 2160, "diag": 55, "hz": 165, "panel": "Mini-LED VA", "cat": "4k", "shortName": "Odyssey Ark 55\"" },
-    { "name": "Dell UltraSharp U4924DW 49\"", "w": 5120, "h": 1440, "diag": 49, "hz": 60, "panel": "IPS Black", "cat": "super-ultra", "shortName": "Dell U4924DW" },
-    { "name": "Samsung Odyssey Neo G9 57\"", "w": 7680, "h": 2160, "diag": 57, "hz": 240, "panel": "Mini-LED VA", "cat": "super-ultra", "shortName": "Neo G9 57\"" }
+    {
+      "name": "Samsung SyncMaster SA850 27\" (Joshua's personal monitor)",
+      "w": 2560,
+      "h": 1440,
+      "diag": 27,
+      "hz": 60,
+      "panel": "PLS",
+      "cat": "joshua-monitor",
+      "shortName": "SA850 27\""
+    },
+    {
+      "name": "Samsung S24D600 24\" (Joshua's work monitor)",
+      "w": 2560,
+      "h": 1440,
+      "diag": 23.8,
+      "hz": 100,
+      "panel": "IPS",
+      "cat": "joshua-work-monitor",
+      "shortName": "S24D600 24\""
+    },
+    {
+      "name": "MacBook Pro 16\" M1 Max",
+      "w": 3456,
+      "h": 2234,
+      "diag": 16.2,
+      "hz": 120,
+      "panel": "Mini-LED IPS",
+      "cat": "macbook",
+      "shortName": "MacBook Pro 16\""
+    },
+    {
+      "name": "Apple iMac 24\" M4",
+      "w": 4480,
+      "h": 2520,
+      "diag": 23.5,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "5k",
+      "shortName": "iMac 24\""
+    },
+    {
+      "name": "Apple Studio Display 27\"",
+      "w": 5120,
+      "h": 2880,
+      "diag": 27,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "5k",
+      "shortName": "Studio Display"
+    },
+    {
+      "name": "Apple Pro Display XDR 32\"",
+      "w": 6016,
+      "h": 3384,
+      "diag": 32,
+      "hz": 60,
+      "panel": "IPS LED",
+      "cat": "6k",
+      "shortName": "Pro Display XDR"
+    },
+    {
+      "name": "ASUS ProArt PA32KCX 32\" 8K",
+      "w": 7680,
+      "h": 4320,
+      "diag": 31.5,
+      "hz": 60,
+      "panel": "Mini-LED IPS",
+      "cat": "8k",
+      "shortName": "ASUS 8K",
+      "upcoming": true
+    },
+    {
+      "name": "ViewSonic VG3281-8K 32\"",
+      "w": 7680,
+      "h": 4320,
+      "diag": 31.5,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "8k",
+      "shortName": "ViewSonic 8K",
+      "upcoming": true
+    },
+    {
+      "name": "Dell UltraSharp U2725QE 27\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 27,
+      "hz": 120,
+      "panel": "IPS Black",
+      "cat": "4k",
+      "shortName": "Dell U2725QE"
+    },
+    {
+      "name": "ASUS ROG Swift OLED PG27UCWM 27\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 27,
+      "hz": 240,
+      "panel": "Tandem W-OLED",
+      "cat": "4k",
+      "shortName": "PG27UCWM",
+      "upcoming": true
+    },
+    {
+      "name": "LG OLED42C5 42\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 41.5,
+      "hz": 144,
+      "panel": "W-OLED",
+      "cat": "4k",
+      "shortName": "LG 42C5"
+    },
+    {
+      "name": "Dell UltraSharp U5226KW 52\"",
+      "w": 6144,
+      "h": 2560,
+      "diag": 52,
+      "hz": 120,
+      "panel": "IPS Black",
+      "cat": "ultrawide-6k",
+      "shortName": "Dell 52\" 6K"
+    },
+    {
+      "name": "LG 39GX950B 39\" 5K2K OLED",
+      "w": 5120,
+      "h": 2160,
+      "diag": 38.5,
+      "hz": 165,
+      "panel": "Tandem W-OLED",
+      "cat": "ultrawide-high",
+      "shortName": "LG 39\" OLED",
+      "upcoming": true
+    },
+    {
+      "name": "LG 40WP95C 40\" 5K2K",
+      "w": 5120,
+      "h": 2160,
+      "diag": 40.0,
+      "hz": 72,
+      "panel": "Nano IPS",
+      "cat": "ultrawide-high",
+      "shortName": "LG 40WP95C"
+    },
+    {
+      "name": "Dell U4025QW 40\" 5K2K",
+      "w": 5120,
+      "h": 2160,
+      "diag": 40,
+      "hz": 120,
+      "panel": "IPS Black",
+      "cat": "ultrawide-high",
+      "shortName": "Dell U4025QW"
+    },
+    {
+      "name": "LG 45GX950A 45\" 5K2K OLED",
+      "w": 5120,
+      "h": 2160,
+      "diag": 44.5,
+      "hz": 165,
+      "panel": "W-OLED",
+      "cat": "ultrawide-high",
+      "shortName": "LG 45\" OLED"
+    },
+    {
+      "name": "LG 45GX990A 45\" 5K2K Bendable OLED",
+      "w": 5120,
+      "h": 2160,
+      "diag": 44.5,
+      "hz": 165,
+      "panel": "W-OLED",
+      "cat": "ultrawide-high",
+      "shortName": "LG 45\" Bendable"
+    },
+    {
+      "name": "LG 52G930B 52\" 5K2K",
+      "w": 5120,
+      "h": 2160,
+      "diag": 52,
+      "hz": 240,
+      "panel": "VA",
+      "cat": "ultrawide-high",
+      "shortName": "LG 52\" 5K2K",
+      "upcoming": true
+    },
+    {
+      "name": "LG 38WR85QC 38\"",
+      "w": 3840,
+      "h": 1600,
+      "diag": 37.5,
+      "hz": 144,
+      "panel": "Nano IPS",
+      "cat": "ultrawide-mid",
+      "shortName": "LG 38WR85QC"
+    },
+    {
+      "name": "Dell U3425WE 34\" Thunderbolt",
+      "w": 3440,
+      "h": 1440,
+      "diag": 34.14,
+      "hz": 120,
+      "panel": "IPS Black",
+      "cat": "ultrawide-low",
+      "shortName": "Dell U3425WE"
+    },
+    {
+      "name": "Dell AW3425DW 34\" QD-OLED",
+      "w": 3440,
+      "h": 1440,
+      "diag": 34.18,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "ultrawide-low",
+      "shortName": "AW3425DW"
+    },
+    {
+      "name": "Gigabyte MO34WQC2 34\"",
+      "w": 3440,
+      "h": 1440,
+      "diag": 34,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "ultrawide-low",
+      "shortName": "Gigabyte 34\""
+    },
+    {
+      "name": "ASUS ROG Swift OLED PG34WCDN 34\"",
+      "w": 3440,
+      "h": 1440,
+      "diag": 34,
+      "hz": 360,
+      "panel": "QD-OLED",
+      "cat": "ultrawide-low",
+      "shortName": "PG34WCDN",
+      "upcoming": true
+    },
+    {
+      "name": "MSI MPG 341CQR QD-OLED X36 34\"",
+      "w": 3440,
+      "h": 1440,
+      "diag": 34,
+      "hz": 360,
+      "panel": "QD-OLED",
+      "cat": "ultrawide-low",
+      "shortName": "MSI 341CQR X36",
+      "upcoming": true
+    },
+    {
+      "name": "LG 34WQ650-W 34\"",
+      "w": 2560,
+      "h": 1080,
+      "diag": 34,
+      "hz": 100,
+      "panel": "IPS",
+      "cat": "ultrawide-entry",
+      "shortName": "LG 34\" 1080p"
+    },
+    {
+      "name": "INNOCN 44C1G 44\"",
+      "w": 3840,
+      "h": 1080,
+      "diag": 43.8,
+      "hz": 120,
+      "panel": "IPS",
+      "cat": "super-ultra",
+      "shortName": "INNOCN 44C1G"
+    },
+    {
+      "name": "Lenovo P49w-30 49\"",
+      "w": 5120,
+      "h": 1440,
+      "diag": 49,
+      "hz": 60,
+      "panel": "IPS Black",
+      "cat": "super-ultra",
+      "shortName": "Lenovo 49\""
+    },
+    {
+      "name": "MSI MPG 491CQPX 49\" QD-OLED",
+      "w": 5120,
+      "h": 1440,
+      "diag": 49,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "super-ultra",
+      "shortName": "MSI 491CQPX"
+    },
+    {
+      "name": "Samsung Odyssey OLED G9 49\" (G93SD)",
+      "w": 5120,
+      "h": 1440,
+      "diag": 49,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "super-ultra",
+      "shortName": "OLED G9 G93SD"
+    },
+    {
+      "name": "Dell UltraSharp U4323QE 43\" 4K",
+      "w": 3840,
+      "h": 2160,
+      "diag": 42.51,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "4k",
+      "shortName": "Dell U4323QE"
+    },
+    {
+      "name": "Samsung Odyssey Ark 55\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 55,
+      "hz": 165,
+      "panel": "Mini-LED VA",
+      "cat": "4k",
+      "shortName": "Odyssey Ark 55\""
+    },
+    {
+      "name": "Dell UltraSharp U4924DW 49\"",
+      "w": 5120,
+      "h": 1440,
+      "diag": 49,
+      "hz": 60,
+      "panel": "IPS Black",
+      "cat": "super-ultra",
+      "shortName": "Dell U4924DW"
+    },
+    {
+      "name": "Samsung Odyssey Neo G9 57\"",
+      "w": 7680,
+      "h": 2160,
+      "diag": 57,
+      "hz": 240,
+      "panel": "Mini-LED VA",
+      "cat": "super-ultra",
+      "shortName": "Neo G9 57\""
+    }
   ],
   "ratioLines": [
-    { "name": "4:3",   "r": 1.3333, "color": "#7788aa", "default": false },
-    { "name": "3:2",   "r": 1.5,    "color": "#88aa88", "default": false },
-    { "name": "16:10", "r": 1.6,    "color": "#aaaa77", "default": false },
-    { "name": "16:9",  "r": 1.7778, "color": "#8888aa", "default": true },
-    { "name": "21:9",  "r": 2.3333, "color": "#34d399", "default": true },
-    { "name": "32:10", "r": 3.2,    "color": "#aa7788", "default": false },
-    { "name": "32:9",  "r": 3.5556, "color": "#fb923c", "default": true }
+    { "name": "4:3", "r": 1.3333, "color": "#7788aa", "default": false },
+    { "name": "3:2", "r": 1.5, "color": "#88aa88", "default": false },
+    { "name": "16:10", "r": 1.6, "color": "#aaaa77", "default": false },
+    { "name": "16:9", "r": 1.7778, "color": "#8888aa", "default": true },
+    { "name": "21:9", "r": 2.3333, "color": "#34d399", "default": true },
+    { "name": "32:10", "r": 3.2, "color": "#aa7788", "default": false },
+    { "name": "32:9", "r": 3.5556, "color": "#fb923c", "default": true }
   ],
   "mpCurves": [
-    { "name": "~2.1 MP",   "w": 1920, "h": 1080, "color": "#7a9a9a", "default": false },
-    { "name": "~3.7 MP",   "w": 2560, "h": 1440, "color": "#9a7a9a", "default": false },
-    { "name": "~8.3 MP",   "w": 3840, "h": 2160, "color": "#9a9a7a", "default": false },
-    { "name": "~11.1 MP",  "w": 5120, "h": 2160, "color": "#34d399", "default": true },
-    { "name": "~14.7 MP",  "w": 5120, "h": 2880, "color": "#a78bfa", "default": true },
-    { "name": "~20.4 MP",  "w": 6016, "h": 3384, "color": "#a78bfa", "default": true },
-    { "name": "~33.2 MP",  "w": 7680, "h": 4320, "color": "#e879f9", "default": false }
+    {
+      "name": "~2.1 MP",
+      "w": 1920,
+      "h": 1080,
+      "color": "#7a9a9a",
+      "default": false
+    },
+    {
+      "name": "~3.7 MP",
+      "w": 2560,
+      "h": 1440,
+      "color": "#9a7a9a",
+      "default": false
+    },
+    {
+      "name": "~8.3 MP",
+      "w": 3840,
+      "h": 2160,
+      "color": "#9a9a7a",
+      "default": false
+    },
+    {
+      "name": "~11.1 MP",
+      "w": 5120,
+      "h": 2160,
+      "color": "#34d399",
+      "default": true
+    },
+    {
+      "name": "~14.7 MP",
+      "w": 5120,
+      "h": 2880,
+      "color": "#a78bfa",
+      "default": true
+    },
+    {
+      "name": "~20.4 MP",
+      "w": 6016,
+      "h": 3384,
+      "color": "#a78bfa",
+      "default": true
+    },
+    {
+      "name": "~33.2 MP",
+      "w": 7680,
+      "h": 4320,
+      "color": "#e879f9",
+      "default": false
+    }
   ],
   "ppiLines": [
     { "name": "100 PPI", "ppi": 100, "color": "#7a9a9a", "default": false },
@@ -66,17 +413,24 @@
     { "name": "800 in²", "area": 800, "color": "#e879f9", "default": false }
   ],
   "categories": {
-    "joshua-monitor":  { "label": "Joshua's Samsung SA850 (ref)", "color": "#f472b6" },
-    "macbook":         { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
-    "5k":              { "label": "5K",                         "color": "#a78bfa" },
-    "6k":              { "label": "6K",                        "color": "#c084fc" },
-    "8k":              { "label": "8K",                        "color": "#e879f9" },
-    "ultrawide-high":  { "label": "Ultrawide 5K2K",            "color": "#34d399" },
-    "ultrawide-mid":   { "label": "Ultrawide 3840x1600",       "color": "#60a5fa" },
-    "ultrawide-low":   { "label": "Ultrawide 3440x1440",       "color": "#f87171" },
-    "super-ultra":     { "label": "Super ultrawide 32:9",      "color": "#fb923c" },
-    "ultrawide-6k":    { "label": "Ultrawide 6K",              "color": "#2dd4bf" },
-    "ultrawide-entry": { "label": "Ultrawide 2560x1080",       "color": "#fbbf24" },
-    "4k":              { "label": "4K",                         "color": "#38bdf8" }
+    "joshua-monitor": {
+      "label": "Joshua's Samsung SA850 personal (ref)",
+      "color": "#f472b6"
+    },
+    "joshua-work-monitor": {
+      "label": "Joshua's Samsung S24D600 (ref)",
+      "color": "#22d3ee"
+    },
+    "macbook": { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
+    "5k": { "label": "5K", "color": "#a78bfa" },
+    "6k": { "label": "6K", "color": "#c084fc" },
+    "8k": { "label": "8K", "color": "#e879f9" },
+    "ultrawide-high": { "label": "Ultrawide 5K2K", "color": "#34d399" },
+    "ultrawide-mid": { "label": "Ultrawide 3840x1600", "color": "#60a5fa" },
+    "ultrawide-low": { "label": "Ultrawide 3440x1440", "color": "#f87171" },
+    "super-ultra": { "label": "Super ultrawide 32:9", "color": "#fb923c" },
+    "ultrawide-6k": { "label": "Ultrawide 6K", "color": "#2dd4bf" },
+    "ultrawide-entry": { "label": "Ultrawide 2560x1080", "color": "#fbbf24" },
+    "4k": { "label": "4K", "color": "#38bdf8" }
   }
 }
