@@ -432,7 +432,7 @@ const LEGEND_GROUPS = [
     label: "Reference",
     cats: ["macbook", "joshua-monitor", "joshua-work-monitor"],
   },
-  { label: "Standard", cats: ["4k", "5k", "6k", "8k"] },
+  { label: "Standard", cats: ["4k", "5k", "8k"] },
   {
     label: "Ultrawide",
     cats: [
