@@ -61,6 +61,16 @@
       "shortName": "Studio Display XDR"
     },
     {
+      "name": "Acer ProDesigner PE320QX 32\" 6K",
+      "w": 6016,
+      "h": 3384,
+      "diag": 31.5,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "6k",
+      "shortName": "Acer PE320QX"
+    },
+    {
       "name": "ASUS ProArt PA32KCX 32\" 8K",
       "w": 7680,
       "h": 4320,
@@ -68,8 +78,7 @@
       "hz": 60,
       "panel": "Mini-LED IPS",
       "cat": "8k",
-      "shortName": "ASUS 8K",
-      "upcoming": true
+      "shortName": "ASUS 8K"
     },
     {
       "name": "ViewSonic VG3281-8K 32\"",
@@ -384,6 +393,13 @@
       "default": true
     },
     {
+      "name": "~20.4 MP",
+      "w": 6016,
+      "h": 3384,
+      "color": "#a78bfa",
+      "default": true
+    },
+    {
       "name": "~33.2 MP",
       "w": 7680,
       "h": 4320,
@@ -416,6 +432,7 @@
     },
     "macbook": { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
     "5k": { "label": "5K", "color": "#a78bfa" },
+    "6k": { "label": "6K", "color": "#c084fc" },
     "8k": { "label": "8K", "color": "#e879f9" },
     "ultrawide-high": { "label": "Ultrawide 5K2K", "color": "#34d399" },
     "ultrawide-mid": { "label": "Ultrawide 3840x1600", "color": "#60a5fa" },
