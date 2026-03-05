@@ -238,6 +238,10 @@ h1 + .axis-controls {
   background: #a78bfa;
   box-shadow: 0 0 10px #a78bfa66;
 }
+.dot.cat-6k {
+  background: #c084fc;
+  box-shadow: 0 0 10px #c084fc66;
+}
 .dot.cat-8k {
   background: #e879f9;
   box-shadow: 0 0 10px #e879f966;
