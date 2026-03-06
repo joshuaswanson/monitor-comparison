@@ -41,16 +41,6 @@
       "shortName": "iMac 24\""
     },
     {
-      "name": "Apple Studio Display 27\" (2026)",
-      "w": 5120,
-      "h": 2880,
-      "diag": 27,
-      "hz": 60,
-      "panel": "IPS",
-      "cat": "5k",
-      "shortName": "Studio Display"
-    },
-    {
       "name": "Apple Studio Display XDR 27\"",
       "w": 5120,
       "h": 2880,
