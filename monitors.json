@@ -99,8 +99,7 @@
       "hz": 240,
       "panel": "Tandem W-OLED",
       "cat": "4k",
-      "shortName": "PG27UCWM",
-      "upcoming": true
+      "shortName": "PG27UCWM"
     },
     {
       "name": "LG OLED42C5 42\"",
@@ -181,8 +180,7 @@
       "hz": 240,
       "panel": "VA",
       "cat": "ultrawide-high",
-      "shortName": "LG 52\" 5K2K",
-      "upcoming": true
+      "shortName": "LG 52\" 5K2K"
     },
     {
       "name": "LG 38WR85QC 38\"",
@@ -232,8 +230,7 @@
       "hz": 360,
       "panel": "QD-OLED",
       "cat": "ultrawide-low",
-      "shortName": "PG34WCDN",
-      "upcoming": true
+      "shortName": "PG34WCDN"
     },
     {
       "name": "MSI MPG 341CQR QD-OLED X36 34\"",
@@ -243,8 +240,7 @@
       "hz": 360,
       "panel": "QD-OLED",
       "cat": "ultrawide-low",
-      "shortName": "MSI 341CQR X36",
-      "upcoming": true
+      "shortName": "MSI 341CQR X36"
     },
     {
       "name": "LG 34WQ650-W 34\"",
@@ -305,6 +301,16 @@
       "panel": "IPS",
       "cat": "4k",
       "shortName": "Dell U4323QE"
+    },
+    {
+      "name": "Dell UltraSharp U3226Q 32\" 4K QD-OLED",
+      "w": 3840,
+      "h": 2160,
+      "diag": 31.5,
+      "hz": 120,
+      "panel": "QD-OLED",
+      "cat": "4k",
+      "shortName": "Dell U3226Q"
     },
     {
       "name": "Samsung Odyssey Ark 55\"",
