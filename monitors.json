@@ -61,6 +61,39 @@
       "shortName": "Acer PE320QX"
     },
     {
+      "name": "Samsung Odyssey G8 G80HS 32\" 6K",
+      "w": 6144,
+      "h": 3456,
+      "diag": 32,
+      "hz": 165,
+      "panel": "IPS",
+      "cat": "6k",
+      "shortName": "Odyssey G8 6K",
+      "upcoming": true
+    },
+    {
+      "name": "Samsung Odyssey G8 G80HF 27\" 5K",
+      "w": 5120,
+      "h": 2880,
+      "diag": 27,
+      "hz": 180,
+      "panel": "IPS",
+      "cat": "5k",
+      "shortName": "Odyssey G8 5K",
+      "upcoming": true
+    },
+    {
+      "name": "Samsung Odyssey G8 G80SH 32\" 4K QD-OLED",
+      "w": 3840,
+      "h": 2160,
+      "diag": 31.5,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "4k",
+      "shortName": "Odyssey G8 OLED",
+      "upcoming": true
+    },
+    {
       "name": "ASUS ProArt PA32KCX 32\" 8K",
       "w": 7680,
       "h": 4320,
