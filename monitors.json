@@ -31,6 +31,36 @@
       "shortName": "Studio Display XDR"
     },
     {
+      "name": "ASUS ProArt PA27JCV 27\" 5K",
+      "w": 5120,
+      "h": 2880,
+      "diag": 27,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "5k",
+      "shortName": "ASUS PA27JCV"
+    },
+    {
+      "name": "LG UltraGear 27GM950B 27\" 5K",
+      "w": 5120,
+      "h": 2880,
+      "diag": 27,
+      "hz": 165,
+      "panel": "Mini-LED IPS",
+      "cat": "5k",
+      "shortName": "LG 27GM950B"
+    },
+    {
+      "name": "Samsung Odyssey G8 G80HF 27\" 5K",
+      "w": 5120,
+      "h": 2880,
+      "diag": 27,
+      "hz": 180,
+      "panel": "IPS",
+      "cat": "5k",
+      "shortName": "Odyssey G8 5K"
+    },
+    {
       "name": "Acer ProDesigner PE320QX 32\" 6K",
       "w": 6016,
       "h": 3384,
@@ -41,6 +71,16 @@
       "shortName": "Acer PE320QX"
     },
     {
+      "name": "ASUS ProArt PA32QCV 32\" 6K",
+      "w": 6016,
+      "h": 3384,
+      "diag": 31.5,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "6k",
+      "shortName": "ASUS PA32QCV"
+    },
+    {
       "name": "Samsung Odyssey G8 G80HS 32\" 6K",
       "w": 6144,
       "h": 3456,
@@ -48,30 +88,7 @@
       "hz": 165,
       "panel": "IPS",
       "cat": "6k",
-      "shortName": "Odyssey G8 6K",
-      "upcoming": true
-    },
-    {
-      "name": "Samsung Odyssey G8 G80HF 27\" 5K",
-      "w": 5120,
-      "h": 2880,
-      "diag": 27,
-      "hz": 180,
-      "panel": "IPS",
-      "cat": "5k",
-      "shortName": "Odyssey G8 5K",
-      "upcoming": true
-    },
-    {
-      "name": "Samsung Odyssey G8 G80SH 32\" 4K QD-OLED",
-      "w": 3840,
-      "h": 2160,
-      "diag": 31.5,
-      "hz": 240,
-      "panel": "QD-OLED",
-      "cat": "4k",
-      "shortName": "Odyssey G8 OLED",
-      "upcoming": true
+      "shortName": "Odyssey G8 6K"
     },
     {
       "name": "ASUS ProArt PA32KCX 32\" 8K",
@@ -82,17 +99,6 @@
       "panel": "Mini-LED IPS",
       "cat": "8k",
       "shortName": "ASUS 8K"
-    },
-    {
-      "name": "ViewSonic VG3281-8K 32\"",
-      "w": 7680,
-      "h": 4320,
-      "diag": 31.5,
-      "hz": 60,
-      "panel": "IPS",
-      "cat": "8k",
-      "shortName": "ViewSonic 8K",
-      "upcoming": true
     },
     {
       "name": "Dell UltraSharp U2725QE 27\"",
@@ -108,21 +114,71 @@
       "name": "ASUS ROG Swift OLED PG27UCWM 27\"",
       "w": 3840,
       "h": 2160,
-      "diag": 27,
+      "diag": 26.5,
       "hz": 240,
-      "panel": "Tandem W-OLED",
+      "panel": "Tandem RGB OLED",
       "cat": "4k",
       "shortName": "PG27UCWM"
     },
     {
-      "name": "LG OLED42C5 42\"",
+      "name": "ASUS ROG Swift OLED PG32UCWM 32\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 31.5,
+      "hz": 240,
+      "panel": "Tandem RGB OLED",
+      "cat": "4k",
+      "shortName": "PG32UCWM"
+    },
+    {
+      "name": "Dell UltraSharp U3226Q 32\" 4K QD-OLED",
+      "w": 3840,
+      "h": 2160,
+      "diag": 31.5,
+      "hz": 120,
+      "panel": "QD-OLED",
+      "cat": "4k",
+      "shortName": "Dell U3226Q"
+    },
+    {
+      "name": "Samsung Odyssey OLED G8 G80SH 32\" 4K",
+      "w": 3840,
+      "h": 2160,
+      "diag": 31.5,
+      "hz": 240,
+      "panel": "QD-OLED",
+      "cat": "4k",
+      "shortName": "Odyssey G8 OLED"
+    },
+    {
+      "name": "LG OLED42C6 42\"",
       "w": 3840,
       "h": 2160,
       "diag": 41.5,
-      "hz": 144,
+      "hz": 165,
       "panel": "W-OLED",
       "cat": "4k",
-      "shortName": "LG 42C5"
+      "shortName": "LG 42C6"
+    },
+    {
+      "name": "Dell UltraSharp U4323QE 43\" 4K",
+      "w": 3840,
+      "h": 2160,
+      "diag": 42.51,
+      "hz": 60,
+      "panel": "IPS",
+      "cat": "4k",
+      "shortName": "Dell U4323QE"
+    },
+    {
+      "name": "Samsung Odyssey Ark 55\"",
+      "w": 3840,
+      "h": 2160,
+      "diag": 55,
+      "hz": 165,
+      "panel": "Mini-LED VA",
+      "cat": "4k",
+      "shortName": "Odyssey Ark 55\""
     },
     {
       "name": "Dell UltraSharp U5226KW 52\"",
@@ -135,6 +191,17 @@
       "shortName": "Dell 52\" 6K"
     },
     {
+      "name": "Acer Nitro XV345CKR P 34\" 5K2K",
+      "w": 5120,
+      "h": 2160,
+      "diag": 34,
+      "hz": 180,
+      "panel": "Mini-LED VA",
+      "cat": "ultrawide-high",
+      "shortName": "Acer XV345CKR",
+      "upcoming": true
+    },
+    {
       "name": "LG 39GX950B 39\" 5K2K OLED",
       "w": 5120,
       "h": 2160,
@@ -142,18 +209,28 @@
       "hz": 165,
       "panel": "Tandem W-OLED",
       "cat": "ultrawide-high",
-      "shortName": "LG 39\" OLED",
+      "shortName": "LG 39\" OLED"
+    },
+    {
+      "name": "Alienware AW3926QW 39\" 5K2K OLED",
+      "w": 5120,
+      "h": 2160,
+      "diag": 38.9,
+      "hz": 165,
+      "panel": "Tandem RGB OLED",
+      "cat": "ultrawide-high",
+      "shortName": "AW3926QW",
       "upcoming": true
     },
     {
-      "name": "LG 40WP95C 40\" 5K2K",
+      "name": "LG UltraFine 40WT95UF 40\" 5K2K",
       "w": 5120,
       "h": 2160,
-      "diag": 40.0,
-      "hz": 72,
-      "panel": "Nano IPS",
+      "diag": 39.7,
+      "hz": 120,
+      "panel": "IPS Black",
       "cat": "ultrawide-high",
-      "shortName": "LG 40WP95C"
+      "shortName": "LG 40WT95UF"
     },
     {
       "name": "Dell U4025QW 40\" 5K2K",
@@ -166,7 +243,7 @@
       "shortName": "Dell U4025QW"
     },
     {
-      "name": "LG 45GX950A 45\" 5K2K OLED",
+      "name": "LG 45GX950B 45\" 5K2K OLED",
       "w": 5120,
       "h": 2160,
       "diag": 44.5,
@@ -216,14 +293,14 @@
       "shortName": "Dell U3425WE"
     },
     {
-      "name": "Dell AW3425DW 34\" QD-OLED",
+      "name": "Alienware AW3426DW 34\" QD-OLED",
       "w": 3440,
       "h": 1440,
       "diag": 34.18,
-      "hz": 240,
+      "hz": 280,
       "panel": "QD-OLED",
       "cat": "ultrawide-low",
-      "shortName": "AW3425DW"
+      "shortName": "AW3426DW"
     },
     {
       "name": "Gigabyte MO34WQC2 34\"",
@@ -286,6 +363,16 @@
       "shortName": "Lenovo 49\""
     },
     {
+      "name": "Dell UltraSharp U4924DW 49\"",
+      "w": 5120,
+      "h": 1440,
+      "diag": 49,
+      "hz": 60,
+      "panel": "IPS Black",
+      "cat": "super-ultra",
+      "shortName": "Dell U4924DW"
+    },
+    {
       "name": "MSI MPG 491CQPX 49\" QD-OLED",
       "w": 5120,
       "h": 1440,
@@ -304,46 +391,6 @@
       "panel": "QD-OLED",
       "cat": "super-ultra",
       "shortName": "OLED G9 G93SD"
-    },
-    {
-      "name": "Dell UltraSharp U4323QE 43\" 4K",
-      "w": 3840,
-      "h": 2160,
-      "diag": 42.51,
-      "hz": 60,
-      "panel": "IPS",
-      "cat": "4k",
-      "shortName": "Dell U4323QE"
-    },
-    {
-      "name": "Dell UltraSharp U3226Q 32\" 4K QD-OLED",
-      "w": 3840,
-      "h": 2160,
-      "diag": 31.5,
-      "hz": 120,
-      "panel": "QD-OLED",
-      "cat": "4k",
-      "shortName": "Dell U3226Q"
-    },
-    {
-      "name": "Samsung Odyssey Ark 55\"",
-      "w": 3840,
-      "h": 2160,
-      "diag": 55,
-      "hz": 165,
-      "panel": "Mini-LED VA",
-      "cat": "4k",
-      "shortName": "Odyssey Ark 55\""
-    },
-    {
-      "name": "Dell UltraSharp U4924DW 49\"",
-      "w": 5120,
-      "h": 1440,
-      "diag": 49,
-      "hz": 60,
-      "panel": "IPS Black",
-      "cat": "super-ultra",
-      "shortName": "Dell U4924DW"
     },
     {
       "name": "Samsung Odyssey Neo G9 57\"",
