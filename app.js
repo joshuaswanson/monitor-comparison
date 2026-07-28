@@ -39,9 +39,6 @@ function getVal(m, key) {
   return m[key];
 }
 
-// Filter state
-const filters = {};
-
 const chartArea = document.getElementById("chartArea");
 const chartContainer = document.getElementById("chart");
 const yLabelsCol = document.getElementById("yLabelsCol");
@@ -1331,180 +1328,6 @@ function buildMonitorPanel() {
   panelsRow.before(container);
 }
 
-// Filter panel
-let filterDebounceTimer = null;
-
-function buildFilterPanel() {
-  const container = document.getElementById("filterPanel");
-  container.innerHTML = "";
-
-  const panel = document.createElement("div");
-  panel.className = "filter-panel filter-panel-sidebar";
-
-  const filterGroups = [
-    {
-      heading: "Physical Size",
-      filters: [
-        { key: "wIn", label: "Width (in)", step: 0.1, decimals: 1 },
-        { key: "hIn", label: "Height (in)", step: 0.1, decimals: 1 },
-        { key: "diag", label: "Diagonal (in)", step: 0.1, decimals: 1 },
-        { key: "area", label: "Screen Area (in²)", step: 1, decimals: 0 },
-      ],
-    },
-    {
-      heading: "Resolution",
-      filters: [
-        { key: "w", label: "Horizontal Pixels", step: 1, decimals: 0 },
-        { key: "h", label: "Vertical Pixels", step: 1, decimals: 0 },
-        { key: "mp", label: "Megapixels", step: 0.1, decimals: 1 },
-      ],
-    },
-    {
-      heading: "Other",
-      filters: [
-        { key: "ppi", label: "PPI", step: 1, decimals: 0 },
-        { key: "ar", label: "Aspect Ratio", step: 0.01, decimals: 2 },
-        { key: "hz", label: "Refresh Rate (Hz)", step: 1, decimals: 0 },
-      ],
-    },
-  ];
-
-  filterGroups.forEach((group) => {
-    const section = document.createElement("div");
-    section.className = "filter-section";
-
-    const groupHeading = document.createElement("div");
-    groupHeading.className = "filter-group-heading";
-    groupHeading.textContent = group.heading;
-    section.appendChild(groupHeading);
-
-    group.filters.forEach(({ key, label, step, decimals }) => {
-      const values = monitors.map((m) => getVal(m, key));
-      const dataMin = Math.floor(Math.min(...values) / step) * step;
-      const dataMax = Math.ceil(Math.max(...values) / step) * step;
-
-      const row = document.createElement("div");
-      row.className = "filter-row";
-
-      const rowLabel = document.createElement("span");
-      rowLabel.className = "filter-row-label";
-      rowLabel.textContent = label;
-      row.appendChild(rowLabel);
-
-      const slidersDiv = document.createElement("div");
-      slidersDiv.className = "filter-sliders";
-
-      const minValueLabel = document.createElement("span");
-      minValueLabel.className = "filter-value-label";
-      minValueLabel.textContent = dataMin.toFixed(decimals);
-
-      const dualRange = document.createElement("div");
-      dualRange.className = "dual-range";
-
-      const track = document.createElement("div");
-      track.className = "dual-range-track";
-      dualRange.appendChild(track);
-
-      const fill = document.createElement("div");
-      fill.className = "dual-range-fill";
-      dualRange.appendChild(fill);
-
-      const minSlider = document.createElement("input");
-      minSlider.type = "range";
-      minSlider.className = "dual-range-input";
-      minSlider.min = dataMin;
-      minSlider.max = dataMax;
-      minSlider.step = step;
-      minSlider.value = dataMin;
-
-      const maxSlider = document.createElement("input");
-      maxSlider.type = "range";
-      maxSlider.className = "dual-range-input";
-      maxSlider.min = dataMin;
-      maxSlider.max = dataMax;
-      maxSlider.step = step;
-      maxSlider.value = dataMax;
-
-      const maxValueLabel = document.createElement("span");
-      maxValueLabel.className = "filter-value-label";
-      maxValueLabel.textContent = dataMax.toFixed(decimals);
-
-      function updateFill() {
-        const range = dataMax - dataMin || 1;
-        const left = ((parseFloat(minSlider.value) - dataMin) / range) * 100;
-        const right = ((parseFloat(maxSlider.value) - dataMin) / range) * 100;
-        fill.style.left = left + "%";
-        fill.style.width = right - left + "%";
-      }
-      updateFill();
-
-      minSlider.addEventListener("input", () => {
-        let v = parseFloat(minSlider.value);
-        if (v > parseFloat(maxSlider.value)) {
-          v = parseFloat(maxSlider.value);
-          minSlider.value = v;
-        }
-        minValueLabel.textContent = v.toFixed(decimals);
-        updateFill();
-        onSliderInput(key, v, parseFloat(maxSlider.value), dataMin, dataMax);
-      });
-
-      maxSlider.addEventListener("input", () => {
-        let v = parseFloat(maxSlider.value);
-        if (v < parseFloat(minSlider.value)) {
-          v = parseFloat(minSlider.value);
-          maxSlider.value = v;
-        }
-        maxValueLabel.textContent = v.toFixed(decimals);
-        updateFill();
-        onSliderInput(key, parseFloat(minSlider.value), v, dataMin, dataMax);
-      });
-
-      dualRange.appendChild(minSlider);
-      dualRange.appendChild(maxSlider);
-
-      slidersDiv.appendChild(minValueLabel);
-      slidersDiv.appendChild(dualRange);
-      slidersDiv.appendChild(maxValueLabel);
-      row.appendChild(slidersDiv);
-
-      section.appendChild(row);
-    });
-
-    panel.appendChild(section);
-  });
-
-  container.appendChild(panel);
-}
-
-function onSliderInput(key, minVal, maxVal, dataMin, dataMax) {
-  clearTimeout(filterDebounceTimer);
-  filterDebounceTimer = setTimeout(() => {
-    if (!filters[key]) filters[key] = {};
-    if (minVal > dataMin) {
-      filters[key].min = minVal;
-    } else {
-      delete filters[key].min;
-    }
-    if (maxVal < dataMax) {
-      filters[key].max = maxVal;
-    } else {
-      delete filters[key].max;
-    }
-    if (Object.keys(filters[key]).length === 0) delete filters[key];
-    applyFilters();
-  }, 30);
-}
-
-function passesFilters(m) {
-  for (const [key, bounds] of Object.entries(filters)) {
-    const val = getVal(m, key);
-    if (bounds.min !== undefined && val < bounds.min) return false;
-    if (bounds.max !== undefined && val > bounds.max) return false;
-  }
-  return true;
-}
-
 function buildRefLinesPanel() {
   const container = document.getElementById("refLinesPanel");
   container.innerHTML = "";
@@ -1628,23 +1451,11 @@ function buildRefLinesPanel() {
   container.appendChild(panel);
 }
 
-function applyFilters() {
-  monitors.forEach((m, i) => {
-    const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
-    if (checkboxOn && passesFilters(m)) {
-      visibleMonitors.add(i);
-    } else {
-      visibleMonitors.delete(i);
-    }
-  });
-  updateVisibility();
-}
-
 function updateVisibility() {
-  // Re-apply filter logic to sync checkbox + filter state
+  // Sync visibility from the individual monitor checkboxes
   monitors.forEach((m, i) => {
     const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
-    if (checkboxOn && passesFilters(m)) {
+    if (checkboxOn) {
       visibleMonitors.add(i);
     } else {
       visibleMonitors.delete(i);
@@ -1962,7 +1773,6 @@ async function init() {
 
   buildAxisControls();
   buildMonitorPanel();
-  buildFilterPanel();
   buildRefLinesPanel();
   buildLegend();
   render();
