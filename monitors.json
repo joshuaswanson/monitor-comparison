@@ -1,26 +1,6 @@
 {
   "monitors": [
     {
-      "name": "Samsung SyncMaster SA850 27\" (Joshua's home monitor)",
-      "w": 2560,
-      "h": 1440,
-      "diag": 27,
-      "hz": 60,
-      "panel": "PLS",
-      "cat": "joshua-monitor",
-      "shortName": "SA850 27\""
-    },
-    {
-      "name": "Samsung S24D600 24\" (Joshua's work monitor)",
-      "w": 2560,
-      "h": 1440,
-      "diag": 23.8,
-      "hz": 100,
-      "panel": "IPS",
-      "cat": "joshua-work-monitor",
-      "shortName": "S24D600 24\""
-    },
-    {
       "name": "MacBook Pro 16\" M1 Max",
       "w": 3456,
       "h": 2234,
@@ -451,14 +431,6 @@
     { "name": "800 in²", "area": 800, "color": "#e879f9", "default": false }
   ],
   "categories": {
-    "joshua-monitor": {
-      "label": "Joshua's Samsung SA850 (ref)",
-      "color": "#f472b6"
-    },
-    "joshua-work-monitor": {
-      "label": "Joshua's Samsung S24D600 (ref)",
-      "color": "#22d3ee"
-    },
     "macbook": { "label": "Joshua's MacBook Pro (ref)", "color": "#f5a623" },
     "5k": { "label": "5K", "color": "#a78bfa" },
     "6k": { "label": "6K", "color": "#c084fc" },
