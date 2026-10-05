@@ -92,7 +92,7 @@ function measureChart() {
   W = rect.width;
   H = rect.height;
   const chartRect = chartContainer.getBoundingClientRect();
-  areaOffsetLeft = rect.left - chartRect.left;
+  areaOffsetLeft = rect.left - chartRect.left - chartContainer.clientLeft;
   areaOffsetTop = rect.top - chartRect.top;
 }
 
@@ -167,18 +167,18 @@ const DOT_OBSTACLE_RADIUS = 8;
 const EXPANDED_DOT_PAD = 12;
 
 const LABEL_CANDIDATES = [
-  (cx, cy) => ({ lx: cx + 10, ly: cy - 4, alignRight: false }),
-  (cx, cy) => ({ lx: cx + 10, ly: cy - 14, alignRight: false }),
-  (cx, cy) => ({ lx: cx + 10, ly: cy + 10, alignRight: false }),
-  (cx, cy) => ({ lx: cx - 10, ly: cy - 4, alignRight: true }),
-  (cx, cy) => ({ lx: cx - 10, ly: cy - 14, alignRight: true }),
-  (cx, cy) => ({ lx: cx - 10, ly: cy + 10, alignRight: true }),
+  (cx, cy) => ({ lx: cx + 12, ly: cy - 4, alignRight: false }),
+  (cx, cy) => ({ lx: cx + 12, ly: cy - 14, alignRight: false }),
+  (cx, cy) => ({ lx: cx + 12, ly: cy + 10, alignRight: false }),
+  (cx, cy) => ({ lx: cx - 12, ly: cy - 4, alignRight: true }),
+  (cx, cy) => ({ lx: cx - 12, ly: cy - 14, alignRight: true }),
+  (cx, cy) => ({ lx: cx - 12, ly: cy + 10, alignRight: true }),
 ];
 
 function defaultLabelSpot(cx, cy) {
   const alignRight = cx > W * 0.85;
   return {
-    lx: alignRight ? cx - 10 : cx + 10,
+    lx: alignRight ? cx - 12 : cx + 12,
     ly: cy < H * 0.1 ? cy + 10 : cy - 4,
     alignRight,
   };
@@ -230,7 +230,7 @@ function placeExpandedGroup(key, group, cx, cy, layout) {
     const onLeft = dx < -3;
     const isRightmost = dx === maxDx && dx > 3;
     const isLeftmost = dx === minDx && onLeft;
-    const lx = onLeft ? x - 8 : x + 8;
+    const lx = onLeft ? x - 10 : x + 10;
     let ly = y - 4;
     if (!isRightmost && !isLeftmost) {
       if (dy > 3) ly = y + 8;
@@ -419,10 +419,17 @@ function sortedCategories() {
     }));
 }
 
+function setThemedColor(el, entry) {
+  el.classList.add("themed");
+  el.style.setProperty("--color-dark", entry.color);
+  el.style.setProperty("--color-light", entry.colorLight);
+}
+
 function categorySwatch(className, cat) {
   const swatch = document.createElement("div");
   swatch.className = className + (cat.shape === "diamond" ? " diamond" : "");
-  swatch.style.background = cat.color;
+  setThemedColor(swatch, cat);
+  swatch.style.background = "var(--c)";
   return swatch;
 }
 
@@ -589,7 +596,8 @@ function createRefLines() {
 
   refLines.forEach((ref) => {
     const path = document.createElementNS(SVG_NS, "path");
-    path.setAttribute("stroke", ref.data.color);
+    setThemedColor(path, ref.data);
+    path.style.stroke = "var(--c)";
     path.setAttribute("stroke-opacity", ref.kind.strokeOpacity);
     path.setAttribute("stroke-width", ref.kind.strokeWidth);
     path.setAttribute("stroke-dasharray", ref.kind.dash);
@@ -598,7 +606,8 @@ function createRefLines() {
 
     const label = document.createElement("div");
     label.className = ref.kind.labelClass;
-    label.style.color = ref.data.color;
+    setThemedColor(label, ref.data);
+    label.style.color = "var(--c)";
     label.style.opacity = ref.kind.labelOpacity;
     label.textContent = ref.data.name;
     chartArea.appendChild(label);
@@ -818,7 +827,7 @@ function createDots() {
       "dot" +
       (m.upcoming ? " upcoming" : "") +
       (cat.shape === "diamond" ? " diamond" : "");
-    dot.style.setProperty("--cat-color", cat.color);
+    setThemedColor(dot, cat);
     makeKeyboardButton(
       dot,
       `${m.name}${m.upcoming ? " (upcoming)" : ""}, ${m.w} x ${m.h}, ${m.diag} inch, ${m.hz} Hz, ${m.panel}`,
@@ -927,11 +936,11 @@ function getExpandedBounds(group) {
     const x = cx + offsets[j].dx,
       y = cy + offsets[j].dy;
     if (offsets[j].dx < -3) {
-      minX = Math.min(minX, x - 8 - labelWidths[mi]);
+      minX = Math.min(minX, x - 10 - labelWidths[mi]);
       maxX = Math.max(maxX, x + 8);
     } else {
       minX = Math.min(minX, x - 8);
-      maxX = Math.max(maxX, x + 8 + labelWidths[mi]);
+      maxX = Math.max(maxX, x + 10 + labelWidths[mi]);
     }
     minY = Math.min(minY, y - 14);
     maxY = Math.max(maxY, y + 14);
@@ -1179,7 +1188,8 @@ function buildRefLinesPanel() {
       label.appendChild(cb);
       const dot = document.createElement("div");
       dot.className = "cat-dot";
-      dot.style.background = ref.data.color;
+      setThemedColor(dot, ref.data);
+      dot.style.background = "var(--c)";
       label.appendChild(dot);
       label.appendChild(document.createTextNode(ref.data.name));
       items.appendChild(label);
@@ -1372,6 +1382,34 @@ function writeUrlState() {
     hash ? "#" + hash : location.pathname + location.search,
   );
 }
+
+const systemPrefersDark = matchMedia("(prefers-color-scheme: dark)");
+
+function themeChoice() {
+  return localStorage.getItem("theme") || "system";
+}
+
+function applyTheme() {
+  const choice = themeChoice();
+  const dark =
+    choice === "dark" || (choice === "system" && systemPrefersDark.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.querySelectorAll("#themeSwitch button").forEach((button) => {
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.themeChoice === choice),
+    );
+  });
+}
+
+document.querySelectorAll("#themeSwitch button").forEach((button) => {
+  button.addEventListener("click", () => {
+    localStorage.setItem("theme", button.dataset.themeChoice);
+    applyTheme();
+  });
+});
+systemPrefersDark.addEventListener("change", applyTheme);
+applyTheme();
 
 async function loadData() {
   const response = await fetch("monitors.json");

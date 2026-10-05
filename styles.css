@@ -1,3 +1,69 @@
+:root {
+  color-scheme: dark;
+  --page: #0f1117;
+  --surface: #161822;
+  --surface-raised: #1e2038;
+  --badge-bg: #252740;
+  --border: #2a2c3a;
+  --border-strong: #3a3c5a;
+  --border-hover: #6a6c8a;
+  --border-focus: #8a8caa;
+  --grid: #1e2030;
+  --text-strong: #f0f0f5;
+  --text: #e0e0e6;
+  --text-soft: #c0c0d0;
+  --text-muted: #9a9aae;
+  --text-dim: #7a7a8e;
+  --text-faint: #5a5a6e;
+  --focus: #e0e0f0;
+  --error: #f87171;
+  --link: #7ab4fe;
+  --bezel-color: #262938;
+  --bezel-inner: #0b0c12;
+  --bezel-edge: #343749;
+  --stand-top: #1b1d29;
+  --stand-base: #2c2f41;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --reference: #c9c9d4;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f3f4f8;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --badge-bg: #eef0f6;
+  --border: #dcdde6;
+  --border-strong: #c4c6d4;
+  --border-hover: #8a8ca0;
+  --border-focus: #5a5c78;
+  --grid: #ececf2;
+  --text-strong: #14151c;
+  --text: #24252e;
+  --text-soft: #3a3c4a;
+  --text-muted: #565869;
+  --text-dim: #676a7c;
+  --text-faint: #878a9b;
+  --focus: #14151c;
+  --error: #c62828;
+  --link: #1c5cab;
+  --bezel-color: #cdd0db;
+  --bezel-inner: #a9acbb;
+  --bezel-edge: #b4b7c6;
+  --stand-top: #b7bac8;
+  --stand-base: #bdc0cd;
+  --shadow: rgba(40, 45, 80, 0.16);
+  --reference: #6b6b78;
+}
+
+/* Chart colours come in a dark and a light variant, set per element. */
+.themed {
+  --c: var(--color-dark);
+}
+:root[data-theme="light"] .themed {
+  --c: var(--color-light);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,8 +75,8 @@ html {
 }
 
 body {
-  background: #0f1117;
-  color: #e0e0e6;
+  background: var(--page);
+  color: var(--text);
   font-family: "DM Sans", sans-serif;
   font-size: 18px;
   min-height: 100vh;
@@ -25,14 +91,14 @@ body {
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.035em;
-  color: #f0f0f5;
+  color: var(--text-strong);
   margin-bottom: 6px;
   text-align: center;
 }
 
 .logo-owner {
   font-weight: 400;
-  color: #7a7a8e;
+  color: var(--text-dim);
 }
 
 /* Each "o" in the title is drawn as a chart dot. */
@@ -54,6 +120,44 @@ h1 + .axis-controls {
   margin-top: 16px;
 }
 
+.theme-switch {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.theme-switch button {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.theme-switch button + button {
+  border-left: 1px solid var(--border-strong);
+}
+
+.theme-switch button:hover {
+  color: var(--text-strong);
+}
+
+.theme-switch button[aria-pressed="true"] {
+  background: var(--badge-bg);
+  color: var(--text-strong);
+}
+
+.theme-switch button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
 /* Axis selector controls */
 .axis-controls {
   display: flex;
@@ -71,7 +175,7 @@ h1 + .axis-controls {
 .axis-control-group span {
   font-size: 0.72rem;
   font-family: "JetBrains Mono", monospace;
-  color: #7a7a8e;
+  color: var(--text-dim);
   font-weight: 500;
 }
 
@@ -79,10 +183,10 @@ h1 + .axis-controls {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background: #1e2038;
-  border: 1px solid #3a3c5a;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  color: #c0c0d0;
+  color: var(--text-soft);
   font-size: 0.7rem !important;
   font-family: "JetBrains Mono", monospace;
   padding: 4px 24px 4px 8px !important;
@@ -95,11 +199,11 @@ h1 + .axis-controls {
 }
 
 .axis-control-group select:hover {
-  border-color: #6a6c8a;
+  border-color: var(--border-hover);
 }
 
 .axis-control-group select:focus {
-  border-color: #8a8caa;
+  border-color: var(--border-focus);
 }
 
 /* Layout */
@@ -116,7 +220,7 @@ h1 + .axis-controls {
   transform: rotate(180deg);
   font-size: 0.8rem;
   font-weight: 500;
-  color: #7a7a8e;
+  color: var(--text-dim);
   letter-spacing: 0.03em;
   display: flex;
   align-items: center;
@@ -147,10 +251,41 @@ h1 + .axis-controls {
   width: 820px;
   max-width: 100%;
   height: 560px;
-  background: #161822;
-  border: 1px solid #2a2c3a;
-  border-radius: 12px;
+  background: var(--surface);
+  --bezel: 11px;
+  --stand-neck: 38px;
+  border: var(--bezel) solid var(--bezel-color);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 0 1px var(--bezel-inner),
+    0 0 0 1px var(--bezel-edge),
+    0 28px 60px var(--shadow);
+  margin-bottom: calc(var(--stand-neck) + 10px);
   overflow: visible;
+}
+
+/* Monitor stand: a tapered neck and a flat base under the screen. */
+.chart-container::before,
+.chart-container::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.chart-container::before {
+  top: calc(100% + var(--bezel));
+  width: 130px;
+  height: var(--stand-neck);
+  background: linear-gradient(var(--stand-top), var(--bezel-color));
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+}
+.chart-container::after {
+  top: calc(100% + var(--bezel) + var(--stand-neck));
+  width: 290px;
+  height: 9px;
+  background: var(--stand-base);
+  border-radius: 3px 3px 5px 5px;
 }
 
 .chart-area {
@@ -164,7 +299,7 @@ h1 + .axis-controls {
 .x-axis-title {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #7a7a8e;
+  color: var(--text-dim);
   letter-spacing: 0.03em;
   margin-top: 12px;
   white-space: nowrap;
@@ -174,7 +309,7 @@ h1 + .axis-controls {
 .grid-line-h,
 .grid-line-v {
   position: absolute;
-  background: #1e2030;
+  background: var(--grid);
 }
 .grid-line-h {
   left: 0;
@@ -192,7 +327,7 @@ h1 + .axis-controls {
   position: absolute;
   font-size: 0.7rem;
   font-family: "JetBrains Mono", monospace;
-  color: #5a5a6e;
+  color: var(--text-faint);
   text-align: right;
   right: 4px;
   transform: translateY(-50%);
@@ -203,7 +338,7 @@ h1 + .axis-controls {
   position: absolute;
   font-size: 0.7rem;
   font-family: "JetBrains Mono", monospace;
-  color: #5a5a6e;
+  color: var(--text-faint);
   transform: translateX(-50%);
   bottom: 8px;
 }
@@ -216,8 +351,8 @@ h1 + .axis-controls {
   border-radius: 50%;
   transform: translate(-50%, -50%);
   cursor: pointer;
-  background: var(--cat-color);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--cat-color) 40%, transparent);
+  background: var(--c);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 40%, transparent);
   z-index: 2;
   transition: transform 0.15s ease;
 }
@@ -244,14 +379,14 @@ h1 + .axis-controls {
 
 .dot.upcoming {
   background: transparent;
-  border: 2px solid var(--cat-color);
+  border: 2px solid var(--c);
   width: 13px;
   height: 13px;
 }
 
 .dot:focus-visible,
 .cluster-badge:focus-visible {
-  outline: 2px solid #e0e0f0;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -264,7 +399,7 @@ h1 + .axis-controls {
   padding: 24px;
   text-align: center;
   font-size: 0.8rem;
-  color: #f87171;
+  color: var(--error);
 }
 
 .diamond {
@@ -281,7 +416,7 @@ h1 + .axis-controls {
   margin-top: 6px;
   font-size: 0.68rem;
   font-family: "JetBrains Mono", monospace;
-  color: #7a7a8e;
+  color: var(--text-dim);
   text-align: center;
 }
 
@@ -290,7 +425,7 @@ h1 + .axis-controls {
   position: absolute;
   font-size: 0.58rem;
   font-family: "JetBrains Mono", monospace;
-  color: #8a8a9e;
+  color: var(--text-muted);
   white-space: nowrap;
   pointer-events: none;
   z-index: 3;
@@ -304,9 +439,9 @@ h1 + .axis-controls {
   font-size: 0.6rem;
   font-family: "JetBrains Mono", monospace;
   font-weight: 700;
-  color: #bbbbd0;
-  background: #252740;
-  border: 1px solid #3a3c52;
+  color: var(--text-soft);
+  background: var(--badge-bg);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: 2px 7px;
   cursor: pointer;
@@ -317,8 +452,8 @@ h1 + .axis-controls {
   user-select: none;
 }
 .cluster-badge:hover {
-  border-color: #6a6c8a;
-  color: #e0e0f0;
+  border-color: var(--border-hover);
+  color: var(--focus);
 }
 
 /* Reference lines */
@@ -345,26 +480,26 @@ h1 + .axis-controls {
 .tooltip {
   display: none;
   position: fixed;
-  background: #1e2038;
-  border: 1px solid #3a3c5a;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   padding: 12px 16px;
   font-size: 0.78rem;
   z-index: 100;
   pointer-events: none;
   min-width: 240px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 .tooltip .tt-name {
   font-weight: 700;
-  color: #f0f0f5;
+  color: var(--text-strong);
   margin-bottom: 6px;
   font-size: 0.82rem;
 }
 .tooltip .tt-detail {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.68rem;
-  color: #9a9aae;
+  color: var(--text-muted);
   line-height: 1.7;
 }
 
@@ -374,7 +509,7 @@ h1 + .axis-controls {
 .tooltip .tt-link {
   display: inline-block;
   margin-top: 6px;
-  color: #7ab4fe;
+  color: var(--link);
 }
 
 /* Legend */
@@ -394,7 +529,7 @@ h1 + .axis-controls {
   font-size: 0.6rem;
   font-family: "JetBrains Mono", monospace;
   font-weight: 600;
-  color: #55556a;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 2px;
@@ -404,7 +539,7 @@ h1 + .axis-controls {
   align-items: center;
   gap: 6px;
   font-size: 0.73rem;
-  color: #7a7a8e;
+  color: var(--text-dim);
 }
 .legend-dot {
   width: 8px;
@@ -438,8 +573,8 @@ h1 + .axis-controls {
 
 .monitor-list {
   text-align: left;
-  background: #161822;
-  border: 1px solid #2a2c3a;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px 24px;
   columns: 3 200px;
@@ -454,7 +589,7 @@ h1 + .axis-controls {
 .monitor-list-category-title {
   font-size: 0.72rem;
   font-family: "JetBrains Mono", monospace;
-  color: #9a9aae;
+  color: var(--text-muted);
   margin-bottom: 5px;
   display: flex;
   align-items: center;
@@ -464,7 +599,7 @@ h1 + .axis-controls {
 }
 
 .monitor-list-category-title input[type="checkbox"] {
-  accent-color: #7a7a8e;
+  accent-color: var(--text-dim);
   cursor: pointer;
 }
 
@@ -488,18 +623,18 @@ h1 + .axis-controls {
   gap: 5px;
   font-size: 0.68rem;
   font-family: "JetBrains Mono", monospace;
-  color: #7a7a8e;
+  color: var(--text-dim);
   cursor: pointer;
   user-select: none;
 }
 
 .monitor-checkbox-label input[type="checkbox"] {
-  accent-color: #7a7a8e;
+  accent-color: var(--text-dim);
   cursor: pointer;
 }
 
 .unreleased-tag {
-  color: #555;
+  color: var(--text-faint);
   font-size: 0.6rem;
   margin-left: 2px;
 }
@@ -513,8 +648,8 @@ h1 + .axis-controls {
 .ref-lines-section {
   flex: 1;
   min-width: 0;
-  background: #161822;
-  border: 1px solid #2a2c3a;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 14px;
 }
@@ -525,21 +660,21 @@ h1 + .axis-controls {
   gap: 8px;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #6a6a7e;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 6px;
 }
 
 .ref-lines-heading input[type="checkbox"] {
-  accent-color: #7a7a8e;
+  accent-color: var(--text-dim);
   cursor: pointer;
   margin-left: auto;
 }
 
 .ref-lines-all-label {
   font-size: 0.6rem;
-  color: #55556a;
+  color: var(--text-faint);
   cursor: default;
 }
 
@@ -561,15 +696,15 @@ h1 + .axis-controls {
   width: 100%;
   margin-top: 40px;
   padding: 24px 28px;
-  background: #161822;
-  border: 1px solid #2a2c3a;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
 .glossary h2 {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #9a9aae;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 18px;
@@ -584,12 +719,12 @@ h1 + .axis-controls {
   font-size: 0.78rem;
   font-family: "JetBrains Mono", monospace;
   font-weight: 600;
-  color: #c0c0d0;
+  color: var(--text-soft);
 }
 
 .glossary dd {
   font-size: 0.74rem;
-  color: #7a7a8e;
+  color: var(--text-dim);
   line-height: 1.65;
   margin-top: 2px;
 }
@@ -640,6 +775,11 @@ h1 + .axis-controls {
     font-size: 1.45rem;
   }
 
+  .theme-switch {
+    position: static;
+    margin-bottom: 14px;
+  }
+
   .axis-controls {
     flex-wrap: wrap;
     gap: 8px;
@@ -648,6 +788,16 @@ h1 + .axis-controls {
   .chart-container {
     max-width: calc(100vw - 80px);
     height: clamp(260px, 65vw, 460px);
+    --bezel: 6px;
+    --stand-neck: 24px;
+    border-radius: 10px;
+  }
+  .chart-container::before {
+    width: 80px;
+  }
+  .chart-container::after {
+    width: 170px;
+    height: 6px;
   }
 
   .y-labels-col {
@@ -670,4 +820,13 @@ h1 + .axis-controls {
   .monitor-list-items {
     gap: 4px 12px;
   }
+}
+
+/* Reference lines need more ink on a white surface. */
+:root[data-theme="light"] .ratio-label,
+:root[data-theme="light"] .curve-label {
+  opacity: 0.85 !important;
+}
+:root[data-theme="light"] .chart-area svg path {
+  stroke-opacity: 0.5;
 }
