@@ -17,7 +17,9 @@
 </head>
 <body>
 
-<h1>Joshua's Monitor Comparison Tool</h1>
+<h1 class="logo" aria-label="Joshua's Monitor Comparison Tool">
+  <span aria-hidden="true"><span class="logo-owner">Joshua's</span> M<span class="logo-dot" style="--dot: #4593f2"></span>nit<span class="logo-dot" style="--dot: #2eaa7b"></span>r C<span class="logo-dot" style="--dot: #e66534"></span>mparis<span class="logo-dot" style="--dot: #c9c9d4"></span>n</span>
+</h1>
 
 <div class="axis-controls" id="axisControls"></div>
 
@@ -29,6 +31,7 @@
       <div class="chart-area" id="chartArea"></div>
     </div>
     <div class="x-axis-title" id="xAxisTitle">Screen Area (in²) &#8594;</div>
+    <div class="chart-note" id="chartNote" role="status"></div>
   </div>
 </div>
 
@@ -68,6 +71,9 @@
 
     <dt>Refresh Rate (Hz)</dt>
     <dd>How many times per second the display updates the image. 60 Hz is standard for office work, 120&ndash;144 Hz gives noticeably smoother motion for scrolling and video, and 240 Hz is aimed at competitive gaming. Higher refresh rates require more GPU bandwidth.</dd>
+
+    <dt>Price</dt>
+    <dd>The street price is the lowest US price found at a major retailer or the manufacturer's store on the date shown under the chart. Street prices change often, so check the product page before buying. The tooltip also shows the manufacturer's list price when it is higher.</dd>
 
     <dt>Panel Type</dt>
     <dd>The underlying display technology:

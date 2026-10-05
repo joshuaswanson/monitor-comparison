@@ -1,26 +1,23 @@
 let monitors = [];
 let categories = {};
-let ratioLines = [];
-let mpCurves = [];
-let areaCurves = [];
-let ppiLines = [];
-
+let refLines = [];
 let groups = {};
+
 const dotEls = [];
 const labelEls = [];
+const labelWidths = [];
 let badgeEls = {};
 
 let visibleMonitors = new Set();
-let ratioEnabled = new Set();
-let mpEnabled = new Set();
-let areaEnabled = new Set();
-let ppiEnabled = new Set();
+let plotted = new Set();
+let pricesChecked = null;
 
 let xRange, yRange, W, H, areaOffsetTop, areaOffsetLeft;
 
-// Axis switching state
-let xAxisKey = "area",
-  yAxisKey = "ppi";
+const DEFAULT_X_AXIS = "area";
+const DEFAULT_Y_AXIS = "ppi";
+let xAxisKey = DEFAULT_X_AXIS,
+  yAxisKey = DEFAULT_Y_AXIS;
 
 const AXES = {
   w: { label: "Horizontal Pixels", format: (v) => v.toFixed(0) },
@@ -33,25 +30,37 @@ const AXES = {
   wIn: { label: "Width (in)", format: (v) => v.toFixed(1) },
   hIn: { label: "Height (in)", format: (v) => v.toFixed(1) },
   hz: { label: "Refresh Rate (Hz)", format: (v) => v.toFixed(0) },
+  price: { label: "Street Price (USD)", format: (v) => "$" + v.toFixed(0) },
 };
+
+const AXIS_GROUPS = [
+  { label: "Physical Size", keys: ["wIn", "hIn", "diag", "area"] },
+  { label: "Resolution", keys: ["w", "h", "mp"] },
+  { label: "Price", keys: ["price"] },
+  { label: "Other", keys: ["ppi", "ar", "hz"] },
+];
 
 const chartArea = document.getElementById("chartArea");
 const chartContainer = document.getElementById("chart");
+const chartNote = document.getElementById("chartNote");
 const yLabelsCol = document.getElementById("yLabelsCol");
 const tooltip = document.getElementById("tooltip");
 const ttName = document.getElementById("ttName");
 const ttDetail = document.getElementById("ttDetail");
 const legendContainer = document.getElementById("legend");
 
-// Persistent SVG elements for reference lines
-const ratioLineEls = [];
-const mpCurveEls = [];
-const areaCurveEls = [];
-const ppiLineEls = [];
+const SVG_NS = "http://www.w3.org/2000/svg";
 let refSvg = null;
 let gridLayer = null;
 
 const CURVE_SAMPLES = 200;
+
+function slug(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 function xPos(v) {
   return ((v - xRange.min) / (xRange.max - xRange.min)) * W;
@@ -87,24 +96,52 @@ function measureChart() {
   areaOffsetTop = rect.top - chartRect.top;
 }
 
-function computeLayout() {
-  const vis = monitors.filter((_, i) => visibleMonitors.has(i));
-  const src = vis.length > 0 ? vis : monitors;
-  xRange = niceRange(
-    src.map((m) => m[xAxisKey]),
-    0.15,
-  );
-  yRange = niceRange(
-    src.map((m) => m[yAxisKey]),
-    0.15,
-  );
-  measureChart();
+function axisRange(key) {
+  let values = [...plotted].map((i) => monitors[i][key]);
+  if (values.length === 0) {
+    values = monitors.map((m) => m[key]).filter(Number.isFinite);
+  }
+  if (values.length === 0) return { min: 0, max: 1 };
+  return niceRange(values, 0.15);
 }
 
-function fanOffsets(n, startAngle) {
+function targetRanges() {
+  return { x: axisRange(xAxisKey), y: axisRange(yAxisKey) };
+}
+
+function refreshPlotted() {
+  plotted = new Set(
+    [...visibleMonitors].filter(
+      (i) =>
+        Number.isFinite(monitors[i][xAxisKey]) &&
+        Number.isFinite(monitors[i][yAxisKey]),
+    ),
+  );
+  const notes = [];
+  if (xAxisKey === "price" || yAxisKey === "price") {
+    notes.push(`Street prices checked on ${pricesChecked}.`);
+  }
+  const missing = visibleMonitors.size - plotted.size;
+  if (missing > 0) {
+    notes.push(
+      `${missing} selected ${missing === 1 ? "monitor has" : "monitors have"} no value for these axes and ${missing === 1 ? "is" : "are"} left off the chart.`,
+    );
+  }
+  chartNote.textContent = notes.join(" ");
+}
+
+function applyPlottedDisplay() {
+  monitors.forEach((_, i) => {
+    const show = plotted.has(i);
+    dotEls[i].style.display = show ? "" : "none";
+    labelEls[i].style.display = show ? "" : "none";
+  });
+}
+
+function fanOffsets(n) {
   const radius = 18;
+  const startAngle = -Math.PI / 2;
   const offsets = [];
-  if (startAngle === undefined) startAngle = -Math.PI / 2;
   for (let i = 0; i < n; i++) {
     const angle = startAngle + ((2 * Math.PI) / n) * i;
     offsets.push({
@@ -115,309 +152,248 @@ function fanOffsets(n, startAngle) {
   return offsets;
 }
 
-function positionDots() {
-  const singletonLabels = [];
-  const expandedDotPositions = [];
-  const nonExpandedBadges = [];
+function groupCentroid(indices) {
+  const cx =
+    indices.reduce((s, i) => s + xPos(monitors[i][xAxisKey]), 0) /
+    indices.length;
+  const cy =
+    indices.reduce((s, i) => s + yPos(monitors[i][yAxisKey]), 0) /
+    indices.length;
+  return { cx, cy };
+}
 
-  // Pass 1: compute all group centroids
-  const groupCentroids = {};
-  Object.entries(groups).forEach(([key, group]) => {
-    const indices = group.indices;
-    const cx =
-      indices.reduce((s, i) => s + xPos(monitors[i][xAxisKey]), 0) /
-      indices.length;
-    const cy =
-      indices.reduce((s, i) => s + yPos(monitors[i][yAxisKey]), 0) /
-      indices.length;
-    groupCentroids[key] = { cx, cy };
+const LABEL_HEIGHT = 12;
+const DOT_OBSTACLE_RADIUS = 8;
+const EXPANDED_DOT_PAD = 12;
+
+const LABEL_CANDIDATES = [
+  (cx, cy) => ({ lx: cx + 10, ly: cy - 4, alignRight: false }),
+  (cx, cy) => ({ lx: cx + 10, ly: cy - 14, alignRight: false }),
+  (cx, cy) => ({ lx: cx + 10, ly: cy + 10, alignRight: false }),
+  (cx, cy) => ({ lx: cx - 10, ly: cy - 4, alignRight: true }),
+  (cx, cy) => ({ lx: cx - 10, ly: cy - 14, alignRight: true }),
+  (cx, cy) => ({ lx: cx - 10, ly: cy + 10, alignRight: true }),
+];
+
+function defaultLabelSpot(cx, cy) {
+  const alignRight = cx > W * 0.85;
+  return {
+    lx: alignRight ? cx - 10 : cx + 10,
+    ly: cy < H * 0.1 ? cy + 10 : cy - 4,
+    alignRight,
+  };
+}
+
+function labelRect(lx, ly, lw, alignRight) {
+  const left = alignRight ? lx - lw : lx;
+  return { left, right: left + lw, top: ly, bottom: ly + LABEL_HEIGHT };
+}
+
+function rectsOverlap(a, b) {
+  return (
+    a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom
+  );
+}
+
+function rectAround(x, y, halfW, halfH) {
+  return { left: x - halfW, right: x + halfW, top: y - halfH, bottom: y + halfH };
+}
+
+function placeSingleton(i, cx, cy, layout) {
+  dotEls[i].style.left = cx + "px";
+  dotEls[i].style.top = cy + "px";
+  labelEls[i].style.opacity = "1";
+  layout.singletonLabels.push({
+    idx: i,
+    cx,
+    cy,
+    ...defaultLabelSpot(cx, cy),
   });
+}
 
-  // Pass 2: position everything
-  Object.entries(groups).forEach(([key, group]) => {
-    const indices = group.indices;
-    const { cx, cy } = groupCentroids[key];
+function placeExpandedGroup(key, group, cx, cy, layout) {
+  const offsets = fanOffsets(group.indices.length);
+  const maxDx = Math.max(...offsets.map((o) => o.dx));
+  const minDx = Math.min(...offsets.map((o) => o.dx));
 
-    if (indices.length === 1) {
-      const i = indices[0];
-      dotEls[i].style.left = cx + "px";
-      dotEls[i].style.top = cy + "px";
+  group.indices.forEach((mi, j) => {
+    const { dx, dy } = offsets[j];
+    const x = cx + dx;
+    const y = cy + dy;
+    dotEls[mi].style.left = x + "px";
+    dotEls[mi].style.top = y + "px";
+    dotEls[mi].style.zIndex = "5";
+    dotEls[mi].style.opacity = "";
+    labelEls[mi].style.opacity = "1";
+    labelEls[mi].style.zIndex = "6";
 
-      if (!visibleMonitors.has(i)) {
-        labelEls[i].style.opacity = "0";
-      } else {
-        labelEls[i].style.opacity = "1";
-
-        let lx = cx + 10,
-          ly = cy - 4;
-        let alignRight = false;
-        if (cx > W * 0.85) {
-          alignRight = true;
-          lx = cx - 10;
-        }
-        if (cy < H * 0.1) ly = cy + 10;
-
-        singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
-      }
-    } else if (group.expanded) {
-      const visIndices = indices.filter((mi) => visibleMonitors.has(mi));
-      const offsets = fanOffsets(visIndices.length);
-      // Find the rightmost and leftmost offsets
-      let maxDx = -Infinity,
-        minDx = Infinity;
-      offsets.forEach((o) => {
-        if (o.dx > maxDx) maxDx = o.dx;
-        if (o.dx < minDx) minDx = o.dx;
-      });
-      visIndices.forEach((mi, j) => {
-        const x = cx + offsets[j].dx;
-        const y = cy + offsets[j].dy;
-        dotEls[mi].style.left = x + "px";
-        dotEls[mi].style.top = y + "px";
-        dotEls[mi].style.zIndex = "5";
-        labelEls[mi].style.opacity = "1";
-        labelEls[mi].style.zIndex = "6";
-
-        const dx = offsets[j].dx,
-          dy = offsets[j].dy;
-        const isRightmost = dx === maxDx && dx > 3;
-        const isLeftmost = dx === minDx && dx < -3;
-        let lx = x,
-          ly = y;
-        labelEls[mi].style.transform = "";
-        if (dx < -3) {
-          labelEls[mi].style.transform = "translateX(-100%)";
-          lx -= 8;
-        } else {
-          lx += 8;
-        }
-        if (isRightmost || isLeftmost) ly -= 4;
-        else if (dy > 3) ly += 8;
-        else if (dy < -3) ly -= 12;
-        else ly -= 4;
-        labelEls[mi].style.left = lx + "px";
-        labelEls[mi].style.top = ly + "px";
-
-        const labelW = labelEls[mi].offsetWidth || 70;
-        const labelLeft = dx < -3 ? lx - labelW : lx;
-        expandedDotPositions.push({
-          x,
-          y,
-          labelLeft,
-          labelRight: labelLeft + labelW,
-          labelTop: ly,
-          labelBottom: ly + 14,
-        });
-      });
-      expandedDotPositions.push({
-        x: cx,
-        y: cy,
-        labelLeft: cx - 10,
-        labelRight: cx + 10,
-        labelTop: cy - 10,
-        labelBottom: cy + 10,
-      });
-      // Hidden dots in this group still go to centroid
-      indices
-        .filter((mi) => !visibleMonitors.has(mi))
-        .forEach((mi) => {
-          dotEls[mi].style.left = cx + "px";
-          dotEls[mi].style.top = cy + "px";
-          labelEls[mi].style.opacity = "0";
-        });
-      if (badgeEls[key]) {
-        badgeEls[key].style.left = cx + "px";
-        badgeEls[key].style.top = cy + "px";
-        badgeEls[key].style.opacity = "0.4";
-      }
-    } else {
-      const visIndices = indices.filter((mi) => visibleMonitors.has(mi));
-      indices.forEach((mi) => {
-        dotEls[mi].style.left = cx + "px";
-        dotEls[mi].style.top = cy + "px";
-        dotEls[mi].style.zIndex = "";
-        labelEls[mi].style.left = cx + "px";
-        labelEls[mi].style.top = cy + "px";
-        labelEls[mi].style.opacity = "0";
-        labelEls[mi].style.zIndex = "";
-      });
-      // If only one monitor visible in this cluster, show its label like a singleton
-      if (visIndices.length === 1) {
-        const i = visIndices[0];
-        labelEls[i].style.opacity = "1";
-        let lx = cx + 10,
-          ly = cy - 4;
-        let alignRight = false;
-        if (cx > W * 0.85) {
-          alignRight = true;
-          lx = cx - 10;
-        }
-        if (cy < H * 0.1) ly = cy + 10;
-        singletonLabels.push({ idx: i, lx, ly, alignRight, cx, cy });
-      }
-      if (badgeEls[key]) {
-        badgeEls[key].style.left = cx + "px";
-        badgeEls[key].style.top = cy + "px";
-        nonExpandedBadges.push({
-          el: badgeEls[key],
-          x: cx,
-          y: cy,
-          key,
-          indices,
-        });
-      }
+    const onLeft = dx < -3;
+    const isRightmost = dx === maxDx && dx > 3;
+    const isLeftmost = dx === minDx && onLeft;
+    const lx = onLeft ? x - 8 : x + 8;
+    let ly = y - 4;
+    if (!isRightmost && !isLeftmost) {
+      if (dy > 3) ly = y + 8;
+      else if (dy < -3) ly = y - 12;
     }
-  });
+    labelEls[mi].style.transform = onLeft ? "translateX(-100%)" : "";
+    labelEls[mi].style.left = lx + "px";
+    labelEls[mi].style.top = ly + "px";
 
-  // Hide non-expanded badges/dots and singletons that overlap expanded cluster dots/labels
-  const dotPad = 12; // padding around dots for overlap check
-  function overlapsExpanded(px, py) {
-    for (const ep of expandedDotPositions) {
-      // Check overlap with expanded dot
-      if (Math.abs(px - ep.x) < dotPad * 2 && Math.abs(py - ep.y) < dotPad * 2)
-        return true;
-      // Check overlap with expanded label
-      if (
-        px + dotPad > ep.labelLeft - 4 &&
-        px - dotPad < ep.labelRight + 4 &&
-        py + dotPad > ep.labelTop - 2 &&
-        py - dotPad < ep.labelBottom + 2
-      )
-        return true;
-    }
-    return false;
-  }
-
-  nonExpandedBadges.forEach(({ el, x, y, indices }) => {
-    const tooClose = overlapsExpanded(x, y);
-    el.style.opacity = tooClose ? "0" : "1";
-    el.style.pointerEvents = tooClose ? "none" : "";
-    indices.forEach((mi) => {
-      dotEls[mi].style.opacity = tooClose ? "0" : "";
+    const labelLeft = onLeft ? lx - labelWidths[mi] : lx;
+    layout.expandedObstacles.push({
+      x,
+      y,
+      labelLeft,
+      labelRight: labelLeft + labelWidths[mi],
+      labelTop: ly,
+      labelBottom: ly + 14,
     });
   });
 
-  // Hide singleton dots/labels that overlap expanded cluster dots/labels
-  const hiddenSingletons = new Set();
-  singletonLabels.forEach((sl) => {
-    const tooClose = overlapsExpanded(sl.cx, sl.cy);
-    if (tooClose) hiddenSingletons.add(sl.idx);
-    dotEls[sl.idx].style.opacity = tooClose ? "0" : "";
-    labelEls[sl.idx].style.opacity = tooClose ? "0" : "1";
+  layout.expandedObstacles.push({
+    x: cx,
+    y: cy,
+    labelLeft: cx - 10,
+    labelRight: cx + 10,
+    labelTop: cy - 10,
+    labelBottom: cy + 10,
   });
 
-  // Collect all visible dot positions for collision checks (exclude hidden singletons)
-  const allDotPositions = [];
-  monitors.forEach((_, i) => {
-    if (!visibleMonitors.has(i)) return;
-    if (hiddenSingletons.has(i)) return;
-    allDotPositions.push({
-      x: parseFloat(dotEls[i].style.left),
-      y: parseFloat(dotEls[i].style.top),
+  badgeEls[key].style.left = cx + "px";
+  badgeEls[key].style.top = cy + "px";
+  badgeEls[key].style.opacity = "0.4";
+  badgeEls[key].style.pointerEvents = "";
+}
+
+function placeCollapsedGroup(key, group, cx, cy, layout) {
+  group.indices.forEach((mi) => {
+    dotEls[mi].style.left = cx + "px";
+    dotEls[mi].style.top = cy + "px";
+    dotEls[mi].style.zIndex = "";
+    labelEls[mi].style.left = cx + "px";
+    labelEls[mi].style.top = cy + "px";
+    labelEls[mi].style.opacity = "0";
+    labelEls[mi].style.zIndex = "";
+  });
+  badgeEls[key].style.left = cx + "px";
+  badgeEls[key].style.top = cy + "px";
+  layout.collapsedBadges.push({ key, group, x: cx, y: cy });
+}
+
+function coveredByExpandedCluster(px, py, expandedObstacles) {
+  const pad = EXPANDED_DOT_PAD;
+  return expandedObstacles.some(
+    (ep) =>
+      (Math.abs(px - ep.x) < pad * 2 && Math.abs(py - ep.y) < pad * 2) ||
+      (px + pad > ep.labelLeft - 4 &&
+        px - pad < ep.labelRight + 4 &&
+        py + pad > ep.labelTop - 2 &&
+        py - pad < ep.labelBottom + 2),
+  );
+}
+
+function hideItemsCoveredByExpandedClusters(layout) {
+  layout.collapsedBadges.forEach((badge) => {
+    badge.hidden = coveredByExpandedCluster(
+      badge.x,
+      badge.y,
+      layout.expandedObstacles,
+    );
+    const el = badgeEls[badge.key];
+    el.style.opacity = badge.hidden ? "0" : "1";
+    el.style.pointerEvents = badge.hidden ? "none" : "";
+    badge.group.indices.forEach((mi) => {
+      dotEls[mi].style.opacity = badge.hidden ? "0" : "";
+    });
+  });
+
+  layout.singletonLabels.forEach((sl) => {
+    sl.hidden = coveredByExpandedCluster(sl.cx, sl.cy, layout.expandedObstacles);
+    dotEls[sl.idx].style.opacity = sl.hidden ? "0" : "";
+    labelEls[sl.idx].style.opacity = sl.hidden ? "0" : "1";
+  });
+}
+
+function labelObstacles(layout) {
+  const hiddenSingletons = new Set(
+    layout.singletonLabels.filter((sl) => sl.hidden).map((sl) => sl.idx),
+  );
+  const dots = [...plotted]
+    .filter((i) => !hiddenSingletons.has(i))
+    .map((i) => ({
       idx: i,
-    });
-  });
+      rect: rectAround(
+        parseFloat(dotEls[i].style.left),
+        parseFloat(dotEls[i].style.top),
+        DOT_OBSTACLE_RADIUS,
+        DOT_OBSTACLE_RADIUS,
+      ),
+    }));
+  const badges = layout.collapsedBadges
+    .filter((badge) => !badge.hidden)
+    .map((badge) =>
+      rectAround(
+        badge.x,
+        badge.y,
+        badge.group.badgeSize.width / 2 + 2,
+        badge.group.badgeSize.height / 2 + 2,
+      ),
+    );
+  return { dots, badges };
+}
 
-  // Add visible badge positions as obstacles (badges are wider than dots)
-  const badgeObstacles = [];
-  nonExpandedBadges.forEach(({ el, x, y }) => {
-    if (el.style.opacity === "0") return;
-    const bw = (el.offsetWidth || 30) / 2 + 2;
-    const bh = (el.offsetHeight || 18) / 2 + 2;
-    badgeObstacles.push({ x, y, hw: bw, hh: bh });
-  });
-
-  // Collision avoidance for singleton labels (dots, badges, AND other labels)
-  const labelHeight = 11;
-  const dotR = 8;
+function placeSingletonLabels(layout) {
+  const { dots, badges } = labelObstacles(layout);
   const placedLabels = [];
 
-  function labelRect(lx, ly, lw, alignR) {
-    const left = alignR ? lx - lw : lx;
-    return { left, right: left + lw, top: ly, bottom: ly + labelHeight };
-  }
-
-  function rectsOverlap(a, b) {
+  function isFree(rect, ownIdx) {
     return (
-      a.right > b.left &&
-      a.left < b.right &&
-      a.bottom > b.top &&
-      a.top < b.bottom
+      !dots.some((d) => d.idx !== ownIdx && rectsOverlap(rect, d.rect)) &&
+      !badges.some((b) => rectsOverlap(rect, b)) &&
+      !placedLabels.some((pl) => rectsOverlap(rect, pl))
     );
   }
 
-  function labelHitsObstacle(lx, ly, lw, alignR, ownIdx) {
-    const r = labelRect(lx, ly, lw, alignR);
-    for (const dp of allDotPositions) {
-      if (dp.idx === ownIdx) continue;
-      if (
-        r.right > dp.x - dotR &&
-        r.left < dp.x + dotR &&
-        r.bottom > dp.y - dotR &&
-        r.top < dp.y + dotR
-      ) {
-        return true;
-      }
-    }
-    for (const b of badgeObstacles) {
-      if (
-        r.right > b.x - b.hw &&
-        r.left < b.x + b.hw &&
-        r.bottom > b.y - b.hh &&
-        r.top < b.y + b.hh
-      ) {
-        return true;
-      }
-    }
-    for (const pl of placedLabels) {
-      if (rectsOverlap(r, pl)) return true;
-    }
-    return false;
-  }
-
-  const candidates = [
-    (cx, cy) => ({ lx: cx + 10, ly: cy - 4, alignRight: false }), // right
-    (cx, cy) => ({ lx: cx + 10, ly: cy - 14, alignRight: false }), // above-right
-    (cx, cy) => ({ lx: cx + 10, ly: cy + 10, alignRight: false }), // below-right
-    (cx, cy) => ({ lx: cx - 10, ly: cy - 4, alignRight: true }), // left
-    (cx, cy) => ({ lx: cx - 10, ly: cy - 14, alignRight: true }), // above-left
-    (cx, cy) => ({ lx: cx - 10, ly: cy + 10, alignRight: true }), // below-left
-  ];
-
-  // Place labels greedily, checking against all previously placed labels
-  singletonLabels.forEach((sl) => {
-    if (hiddenSingletons.has(sl.idx)) return;
-    const lw = labelEls[sl.idx].offsetWidth || 70;
-
-    // Try default position first, then candidates
-    if (!labelHitsObstacle(sl.lx, sl.ly, lw, sl.alignRight, sl.idx)) {
-      placedLabels.push(labelRect(sl.lx, sl.ly, lw, sl.alignRight));
+  layout.singletonLabels.forEach((sl) => {
+    if (sl.hidden) return;
+    const el = labelEls[sl.idx];
+    const lw = labelWidths[sl.idx];
+    const spots = [sl, ...LABEL_CANDIDATES.map((fn) => fn(sl.cx, sl.cy))];
+    const spot = spots.find((s) =>
+      isFree(labelRect(s.lx, s.ly, lw, s.alignRight), sl.idx),
+    );
+    if (!spot) {
+      el.style.opacity = "0";
       return;
     }
-    for (const fn of candidates) {
-      const c = fn(sl.cx, sl.cy);
-      if (!labelHitsObstacle(c.lx, c.ly, lw, c.alignRight, sl.idx)) {
-        sl.lx = c.lx;
-        sl.ly = c.ly;
-        sl.alignRight = c.alignRight;
-        placedLabels.push(labelRect(sl.lx, sl.ly, lw, sl.alignRight));
-        return;
-      }
+    placedLabels.push(labelRect(spot.lx, spot.ly, lw, spot.alignRight));
+    el.style.transform = spot.alignRight ? "translateX(-100%)" : "";
+    el.style.left = spot.lx + "px";
+    el.style.top = spot.ly + "px";
+  });
+}
+
+function positionDots() {
+  const layout = {
+    singletonLabels: [],
+    expandedObstacles: [],
+    collapsedBadges: [],
+  };
+
+  Object.entries(groups).forEach(([key, group]) => {
+    const { cx, cy } = groupCentroid(group.indices);
+    if (group.indices.length === 1) {
+      placeSingleton(group.indices[0], cx, cy, layout);
+    } else if (group.expanded) {
+      placeExpandedGroup(key, group, cx, cy, layout);
+    } else {
+      placeCollapsedGroup(key, group, cx, cy, layout);
     }
-    // No position works -- hide this label
-    sl.hidden = true;
   });
 
-  // Apply final positions
-  singletonLabels.forEach(({ idx, lx, ly, alignRight, hidden }) => {
-    if (hidden) {
-      labelEls[idx].style.opacity = "0";
-      return;
-    }
-    labelEls[idx].style.transform = alignRight ? "translateX(-100%)" : "";
-    labelEls[idx].style.left = lx + "px";
-    labelEls[idx].style.top = ly + "px";
-  });
+  hideItemsCoveredByExpandedClusters(layout);
+  placeSingletonLabels(layout);
 }
 
 function legendGroups() {
@@ -443,6 +419,13 @@ function sortedCategories() {
     }));
 }
 
+function categorySwatch(className, cat) {
+  const swatch = document.createElement("div");
+  swatch.className = className + (cat.shape === "diamond" ? " diamond" : "");
+  swatch.style.background = cat.color;
+  return swatch;
+}
+
 function buildLegend() {
   legendContainer.innerHTML = "";
   const present = new Set(monitors.map((m) => m.cat));
@@ -459,10 +442,7 @@ function buildLegend() {
       const cat = categories[key];
       const item = document.createElement("div");
       item.className = "legend-item";
-      const dot = document.createElement("div");
-      dot.className = "legend-dot";
-      dot.style.background = cat.color;
-      item.appendChild(dot);
+      item.appendChild(categorySwatch("legend-dot", cat));
       item.appendChild(document.createTextNode(cat.label));
       section.appendChild(item);
     });
@@ -512,163 +492,150 @@ function drawGrid() {
   });
 }
 
-function createRefSvg() {
-  refSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+function axesAre(a, b) {
+  return (
+    (xAxisKey === a && yAxisKey === b) || (xAxisKey === b && yAxisKey === a)
+  );
+}
+
+const STRAIGHT_STYLE = {
+  labelClass: "ratio-label",
+  labelOpacity: "0.5",
+  strokeOpacity: "0.25",
+  dash: "6 4",
+};
+const CURVED_STYLE = {
+  labelClass: "curve-label",
+  labelOpacity: "0.4",
+  strokeOpacity: "0.2",
+  dash: "3 3",
+};
+
+// Each geometry() returns how one reference entry is drawn on the current
+// axes, in data units, or null when it has no meaning on them.
+//   { ray: slope }           y = slope * x
+//   { vertical: x }
+//   { horizontal: y }
+//   { curve: fn, labelAtEnd } y = fn(x)
+const REF_KINDS = [
+  {
+    id: "ratio",
+    heading: "Aspect Ratio",
+    source: "ratioLines",
+    strokeWidth: "1.5",
+    ...STRAIGHT_STYLE,
+    geometry(d) {
+      if (axesAre("w", "h") || axesAre("wIn", "hIn")) {
+        const xIsWidth = xAxisKey === "w" || xAxisKey === "wIn";
+        return { ray: xIsWidth ? 1 / d.r : d.r };
+      }
+      if (xAxisKey === "ar") return { vertical: d.r };
+      if (yAxisKey === "ar") return { horizontal: d.r };
+      return null;
+    },
+  },
+  {
+    id: "mp",
+    heading: "Megapixels",
+    source: "mpCurves",
+    strokeWidth: "1.2",
+    ...CURVED_STYLE,
+    geometry(d) {
+      const totalPx = d.w * d.h;
+      if (axesAre("w", "h")) return { curve: (x) => totalPx / x };
+      if (xAxisKey === "area" && yAxisKey === "ppi") {
+        return { curve: (area) => Math.sqrt(totalPx / area), labelAtEnd: true };
+      }
+      if (xAxisKey === "ppi" && yAxisKey === "area") {
+        return { curve: (ppi) => totalPx / (ppi * ppi), labelAtEnd: true };
+      }
+      return null;
+    },
+  },
+  {
+    id: "area",
+    heading: "Screen Area",
+    source: "areaCurves",
+    strokeWidth: "1.2",
+    ...CURVED_STYLE,
+    geometry(d) {
+      return axesAre("wIn", "hIn") ? { curve: (x) => d.area / x } : null;
+    },
+  },
+  {
+    id: "ppi",
+    heading: "PPI",
+    source: "ppiLines",
+    strokeWidth: "1",
+    ...STRAIGHT_STYLE,
+    geometry(d) {
+      // MP = area * PPI² / 1e6
+      if (xAxisKey === "area" && yAxisKey === "mp") {
+        return { ray: (d.ppi * d.ppi) / 1e6 };
+      }
+      if (xAxisKey === "mp" && yAxisKey === "area") {
+        return { ray: 1e6 / (d.ppi * d.ppi) };
+      }
+      return null;
+    },
+  },
+];
+
+function createRefLines() {
+  refSvg = document.createElementNS(SVG_NS, "svg");
   refSvg.style.cssText =
     "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;";
   chartArea.appendChild(refSvg);
-}
 
-function createRatioLines() {
-  ratioLines.forEach((rl) => {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("stroke", rl.color);
-    line.setAttribute("stroke-opacity", "0.25");
-    line.setAttribute("stroke-width", "1.5");
-    line.setAttribute("stroke-dasharray", "6 4");
-    refSvg.appendChild(line);
-
-    const lbl = document.createElement("div");
-    lbl.className = "ratio-label";
-    lbl.style.color = rl.color;
-    lbl.style.opacity = "0.5";
-    lbl.textContent = rl.name;
-    chartArea.appendChild(lbl);
-
-    ratioLineEls.push({ line, label: lbl, data: rl });
-  });
-}
-
-function updateRatioLines() {
-  const whAxes = new Set(["w", "h"]);
-  const whInAxes = new Set(["wIn", "hIn"]);
-  const isWH =
-    whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const isWInHIn =
-    whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const xIsAr = xAxisKey === "ar";
-  const yIsAr = yAxisKey === "ar";
-
-  ratioLineEls.forEach(({ line, label, data }, i) => {
-    if (!ratioEnabled.has(i) || (!isWH && !isWInHIn && !xIsAr && !yIsAr)) {
-      // Hide: move offscreen
-      line.setAttribute("x1", -100);
-      line.setAttribute("y1", -100);
-      line.setAttribute("x2", -100);
-      line.setAttribute("y2", -100);
-      label.style.display = "none";
-      return;
-    }
-
-    label.style.display = "";
-
-    if (isWH || isWInHIn) {
-      // Slope depends on which axis is width vs height
-      // r = w/h, so: x=w,y=h -> y = x/r (slope=1/r); x=h,y=w -> y = x*r (slope=r)
-      const xIsWidth = xAxisKey === "w" || xAxisKey === "wIn";
-      const slope = xIsWidth ? 1 / data.r : data.r;
-
-      let x1d = xRange.min,
-        y1d = slope * x1d;
-      let x2d = xRange.max,
-        y2d = slope * x2d;
-
-      if (y1d < yRange.min) {
-        y1d = yRange.min;
-        x1d = y1d / slope;
-      }
-      if (y1d > yRange.max) {
-        y1d = yRange.max;
-        x1d = y1d / slope;
-      }
-      if (y2d < yRange.min) {
-        y2d = yRange.min;
-        x2d = y2d / slope;
-      }
-      if (y2d > yRange.max) {
-        y2d = yRange.max;
-        x2d = y2d / slope;
-      }
-
-      const sx1 = xPos(x1d),
-        sy1 = yPos(y1d);
-      const sx2 = xPos(x2d),
-        sy2 = yPos(y2d);
-
-      line.setAttribute("x1", sx1);
-      line.setAttribute("y1", sy1);
-      line.setAttribute("x2", sx2);
-      line.setAttribute("y2", sy2);
-
-      // Label at whichever end is near the top of the chart
-      if (sy2 <= sy1) {
-        label.style.left = sx2 + 6 + "px";
-        label.style.top = sy2 - 18 + "px";
-      } else {
-        label.style.left = sx1 + 6 + "px";
-        label.style.top = sy1 - 18 + "px";
-      }
-    } else if (xIsAr) {
-      // Vertical line at x = ratio value
-      const sx = xPos(data.r);
-      if (sx < 0 || sx > W) {
-        line.setAttribute("x1", -100);
-        line.setAttribute("y1", -100);
-        line.setAttribute("x2", -100);
-        line.setAttribute("y2", -100);
-        label.style.display = "none";
-        return;
-      }
-      line.setAttribute("x1", sx);
-      line.setAttribute("y1", 0);
-      line.setAttribute("x2", sx);
-      line.setAttribute("y2", H);
-      label.style.left = sx + 6 + "px";
-      label.style.top = "2px";
-    } else if (yIsAr) {
-      // Horizontal line at y = ratio value
-      const sy = yPos(data.r);
-      if (sy < 0 || sy > H) {
-        line.setAttribute("x1", -100);
-        line.setAttribute("y1", -100);
-        line.setAttribute("x2", -100);
-        line.setAttribute("y2", -100);
-        label.style.display = "none";
-        return;
-      }
-      line.setAttribute("x1", 0);
-      line.setAttribute("y1", sy);
-      line.setAttribute("x2", W);
-      line.setAttribute("y2", sy);
-      label.style.left = W + 6 + "px";
-      label.style.top = sy - 6 + "px";
-    }
-  });
-}
-
-function createMpCurves() {
-  mpCurves.forEach((curve) => {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("stroke", curve.color);
-    path.setAttribute("stroke-opacity", "0.2");
-    path.setAttribute("stroke-width", "1.2");
-    path.setAttribute("stroke-dasharray", "3 3");
+  refLines.forEach((ref) => {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("stroke", ref.data.color);
+    path.setAttribute("stroke-opacity", ref.kind.strokeOpacity);
+    path.setAttribute("stroke-width", ref.kind.strokeWidth);
+    path.setAttribute("stroke-dasharray", ref.kind.dash);
     path.setAttribute("fill", "none");
     refSvg.appendChild(path);
 
-    const lbl = document.createElement("div");
-    lbl.className = "curve-label";
-    lbl.style.color = curve.color;
-    lbl.style.opacity = "0.4";
-    lbl.textContent = curve.name;
-    chartArea.appendChild(lbl);
+    const label = document.createElement("div");
+    label.className = ref.kind.labelClass;
+    label.style.color = ref.data.color;
+    label.style.opacity = ref.kind.labelOpacity;
+    label.textContent = ref.data.name;
+    chartArea.appendChild(label);
 
-    mpCurveEls.push({ path, label: lbl, data: curve });
+    ref.path = path;
+    ref.label = label;
   });
 }
 
-function drawCurve(fn, path, label, labelAtEnd) {
-  label.style.display = "";
+function drawRay(slope, path) {
+  const x1 = Math.max(xRange.min, yRange.min / slope);
+  const x2 = Math.min(xRange.max, yRange.max / slope);
+  if (x1 >= x2) return null;
+  const sx2 = xPos(x2);
+  const sy2 = yPos(slope * x2);
+  path.setAttribute(
+    "d",
+    `M ${xPos(x1)} ${yPos(slope * x1)} L ${sx2} ${sy2}`,
+  );
+  return { left: sx2 + 6, top: sy2 - 18 };
+}
+
+function drawVertical(x, path) {
+  const sx = xPos(x);
+  if (sx < 0 || sx > W) return null;
+  path.setAttribute("d", `M ${sx} 0 L ${sx} ${H}`);
+  return { left: sx + 6, top: 2 };
+}
+
+function drawHorizontal(y, path) {
+  const sy = yPos(y);
+  if (sy < 0 || sy > H) return null;
+  path.setAttribute("d", `M 0 ${sy} L ${W} ${sy}`);
+  return { left: W + 6, top: sy - 6 };
+}
+
+function drawCurve(fn, labelAtEnd, path) {
   let d = "";
   let firstVisible = null;
   let lastVisible = null;
@@ -685,284 +652,151 @@ function drawCurve(fn, path, label, labelAtEnd) {
       if (!firstVisible) firstVisible = { sx, sy };
       lastVisible = { sx, sy };
     } else if (d) {
-      // Clamp one final point to edge so line exits cleanly
       const csx = Math.max(0, Math.min(W, sx));
       const csy = Math.max(0, Math.min(H, sy));
       d += " L " + csx.toFixed(1) + " " + csy.toFixed(1);
       break;
     }
   }
-  path.setAttribute("d", d || "M -100 -100");
-
   const anchor = labelAtEnd ? lastVisible : firstVisible;
-  if (anchor) {
-    label.style.left = anchor.sx + 6 + "px";
-    label.style.top = anchor.sy - 6 + "px";
-  } else {
-    label.style.display = "none";
-  }
+  if (!anchor) return null;
+  path.setAttribute("d", d);
+  return { left: anchor.sx + 6, top: anchor.sy - 6 };
 }
 
-function updateMpCurves() {
-  const whAxes = new Set(["w", "h"]);
-  const isWH =
-    whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const isAreaPpi =
-    (xAxisKey === "area" && yAxisKey === "ppi") ||
-    (xAxisKey === "ppi" && yAxisKey === "area");
-
-  mpCurveEls.forEach(({ path, label, data }, i) => {
-    if (!mpEnabled.has(i) || (!isWH && !isAreaPpi)) {
-      path.setAttribute("d", "M -100 -100");
-      label.style.display = "none";
-      return;
-    }
-    const totalPx = data.w * data.h;
-    if (isWH) {
-      drawCurve((x) => totalPx / x, path, label);
-    } else if (xAxisKey === "area") {
-      // ppi = sqrt(totalPixels / area)
-      drawCurve((area) => Math.sqrt(totalPx / area), path, label, true);
-    } else {
-      // area = totalPixels / ppi^2
-      drawCurve((ppi) => totalPx / (ppi * ppi), path, label, true);
-    }
-  });
+function drawRefLine(ref) {
+  const g = ref.enabled ? ref.kind.geometry(ref.data) : null;
+  if (!g) return null;
+  if ("ray" in g) return drawRay(g.ray, ref.path);
+  if ("vertical" in g) return drawVertical(g.vertical, ref.path);
+  if ("horizontal" in g) return drawHorizontal(g.horizontal, ref.path);
+  return drawCurve(g.curve, g.labelAtEnd, ref.path);
 }
 
-function createAreaCurves() {
-  areaCurves.forEach((curve) => {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("stroke", curve.color);
-    path.setAttribute("stroke-opacity", "0.2");
-    path.setAttribute("stroke-width", "1.2");
-    path.setAttribute("stroke-dasharray", "3 3");
-    path.setAttribute("fill", "none");
-    refSvg.appendChild(path);
-
-    const lbl = document.createElement("div");
-    lbl.className = "curve-label";
-    lbl.style.color = curve.color;
-    lbl.style.opacity = "0.4";
-    lbl.textContent = curve.name;
-    chartArea.appendChild(lbl);
-
-    areaCurveEls.push({ path, label: lbl, data: curve });
-  });
-}
-
-function updateAreaCurves() {
-  const whInAxes = new Set(["wIn", "hIn"]);
-  const isWInHIn =
-    whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-
-  areaCurveEls.forEach(({ path, label, data }, i) => {
-    if (!areaEnabled.has(i) || !isWInHIn) {
-      path.setAttribute("d", "M -100 -100");
-      label.style.display = "none";
-      return;
-    }
-    drawCurve((x) => data.area / x, path, label);
-  });
-}
-
-function createPpiLines() {
-  ppiLines.forEach((pl) => {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("stroke", pl.color);
-    line.setAttribute("stroke-opacity", "0.25");
-    line.setAttribute("stroke-width", "1");
-    line.setAttribute("stroke-dasharray", "6 4");
-    refSvg.appendChild(line);
-
-    const lbl = document.createElement("div");
-    lbl.className = "ratio-label";
-    lbl.style.color = pl.color;
-    lbl.style.opacity = "0.5";
-    lbl.textContent = pl.name;
-    chartArea.appendChild(lbl);
-
-    ppiLineEls.push({ line, label: lbl, data: pl });
-  });
-}
-
-function updatePpiLines() {
-  const isAreaMp =
-    (xAxisKey === "area" && yAxisKey === "mp") ||
-    (xAxisKey === "mp" && yAxisKey === "area");
-
-  ppiLineEls.forEach(({ line, label, data }, i) => {
-    if (!ppiEnabled.has(i) || !isAreaMp) {
-      line.setAttribute("x1", -100);
-      line.setAttribute("y1", -100);
-      line.setAttribute("x2", -100);
-      line.setAttribute("y2", -100);
-      label.style.display = "none";
-      return;
-    }
-
-    label.style.display = "";
-    // MP = area * PPI² / 1e6
-    // X=area, Y=mp: slope = PPI²/1e6
-    // X=mp, Y=area: slope = 1e6/PPI²
-    const slope =
-      xAxisKey === "area"
-        ? (data.ppi * data.ppi) / 1e6
-        : 1e6 / (data.ppi * data.ppi);
-
-    // Line from origin: y = slope * x. Clip to visible range.
-    let x1d = xRange.min,
-      y1d = slope * x1d;
-    let x2d = xRange.max,
-      y2d = slope * x2d;
-
-    // Clip to y range
-    if (y1d < yRange.min) {
-      y1d = yRange.min;
-      x1d = y1d / slope;
-    }
-    if (y1d > yRange.max) {
-      y1d = yRange.max;
-      x1d = y1d / slope;
-    }
-    if (y2d < yRange.min) {
-      y2d = yRange.min;
-      x2d = y2d / slope;
-    }
-    if (y2d > yRange.max) {
-      y2d = yRange.max;
-      x2d = y2d / slope;
-    }
-
-    const sx1 = xPos(x1d),
-      sy1 = yPos(y1d);
-    const sx2 = xPos(x2d),
-      sy2 = yPos(y2d);
-
-    line.setAttribute("x1", sx1);
-    line.setAttribute("y1", sy1);
-    line.setAttribute("x2", sx2);
-    line.setAttribute("y2", sy2);
-
-    // Label at whichever end is near the top of the chart
-    if (sy2 <= sy1) {
-      label.style.left = sx2 + 6 + "px";
-      label.style.top = sy2 - 18 + "px";
-    } else {
-      label.style.left = sx1 + 6 + "px";
-      label.style.top = sy1 - 18 + "px";
-    }
-  });
-}
-
-// Nudge reference line/curve labels so they don't overlap
-function avoidRefLabelOverlap() {
-  const refLabels = [];
-
-  ratioLineEls.forEach(({ label }) => {
-    if (label.style.display === "none") return;
-    const top = parseFloat(label.style.top);
-    const left = parseFloat(label.style.left);
-    if (isNaN(top) || isNaN(left)) return;
-    refLabels.push({ el: label, top, left });
-  });
-
-  mpCurveEls.forEach(({ label }) => {
-    if (label.style.display === "none") return;
-    const top = parseFloat(label.style.top);
-    const left = parseFloat(label.style.left);
-    if (isNaN(top) || isNaN(left)) return;
-    refLabels.push({ el: label, top, left });
-  });
-
-  areaCurveEls.forEach(({ label }) => {
-    if (label.style.display === "none") return;
-    const top = parseFloat(label.style.top);
-    const left = parseFloat(label.style.left);
-    if (isNaN(top) || isNaN(left)) return;
-    refLabels.push({ el: label, top, left });
-  });
-
-  ppiLineEls.forEach(({ label }) => {
-    if (label.style.display === "none") return;
-    const top = parseFloat(label.style.top);
-    const left = parseFloat(label.style.left);
-    if (isNaN(top) || isNaN(left)) return;
-    refLabels.push({ el: label, top, left });
-  });
-
-  // Sort by vertical position (top value)
-  refLabels.sort((a, b) => a.top - b.top);
-
+function spreadRefLabels(placed) {
+  placed.sort((a, b) => a.top - b.top);
   const minGap = 14;
-  for (let i = 1; i < refLabels.length; i++) {
-    const prev = refLabels[i - 1];
-    const curr = refLabels[i];
-    // Only nudge if horizontally close (both near same edge)
+  for (let i = 1; i < placed.length; i++) {
+    const prev = placed[i - 1];
+    const curr = placed[i];
     if (Math.abs(curr.left - prev.left) < 60 && curr.top - prev.top < minGap) {
       curr.top = prev.top + minGap;
-      curr.el.style.top = curr.top + "px";
     }
   }
-  // Hide labels that would overflow into the x-axis area
-  for (const rl of refLabels) {
-    if (rl.top > H - 4) {
-      rl.el.style.display = "none";
+}
+
+function updateRefLines() {
+  const placed = [];
+  refLines.forEach((ref) => {
+    const anchor = drawRefLine(ref);
+    if (!anchor) {
+      ref.path.setAttribute("d", "");
+      ref.label.style.display = "none";
+      return;
     }
-  }
+    placed.push({ label: ref.label, ...anchor });
+  });
+
+  spreadRefLabels(placed);
+
+  placed.forEach(({ label, left, top }) => {
+    const overflowsIntoXAxis = top > H - 4;
+    label.style.display = overflowsIntoXAxis ? "none" : "";
+    label.style.left = left + "px";
+    label.style.top = top + "px";
+  });
+}
+
+function updateLabelMargin() {
+  const anyDrawn = refLines.some(
+    (ref) => ref.enabled && ref.kind.geometry(ref.data),
+  );
+  const widest = Math.max(0, ...refLines.map((ref) => ref.labelWidth));
+  chartArea.style.right = (anyDrawn ? widest + 14 : 20) + "px";
+  measureChart();
+}
+
+function measureWhileDisplayed(els, record) {
+  const previous = els.map((el) => el.style.display);
+  els.forEach((el) => (el.style.display = ""));
+  els.forEach((el, i) => record(i, el.offsetWidth));
+  els.forEach((el, i) => (el.style.display = previous[i]));
+}
+
+function measureLabelWidths() {
+  measureWhileDisplayed(labelEls, (i, width) => (labelWidths[i] = width));
+  measureWhileDisplayed(
+    refLines.map((ref) => ref.label),
+    (i, width) => (refLines[i].labelWidth = width),
+  );
 }
 
 let pinnedDotIndex = null;
 
-function showTooltipForDot(dot, m) {
+function formatUsd(amount) {
+  return "$" + amount.toLocaleString("en-US");
+}
+
+function tooltipRow(text) {
+  const row = document.createElement("div");
+  row.textContent = text;
+  return row;
+}
+
+function showTooltip(i) {
+  const m = monitors[i];
+  const pinned = pinnedDotIndex === i;
   tooltip.style.display = "block";
-  const db = dot.getBoundingClientRect();
+  tooltip.classList.toggle("pinned", pinned);
+  ttName.textContent = m.name + (m.upcoming ? " (upcoming)" : "");
+
+  const rows = [
+    `Size: ${m.wIn.toFixed(1)}" x ${m.hIn.toFixed(1)}"`,
+    `Diagonal: ${m.diag}"`,
+    `Area: ${m.area.toFixed(0)} in²`,
+    `Resolution: ${m.w} x ${m.h}`,
+    `Megapixels: ${m.mp.toFixed(1)} MP`,
+    `PPI: ${m.ppi.toFixed(0)}`,
+    `Aspect Ratio: ${m.ar.toFixed(2)}`,
+    `Refresh Rate: ${m.hz} Hz`,
+    `Panel: ${m.panel}`,
+  ];
+  if (m.price != null) {
+    const discounted = m.msrp != null && m.msrp > m.price;
+    rows.push(
+      `Street Price: ${formatUsd(m.price)}` +
+        (discounted ? ` (list ${formatUsd(m.msrp)})` : ""),
+    );
+  }
+  if (m.year != null) rows.push(`Released: ${m.year}`);
+  ttDetail.replaceChildren(...rows.map(tooltipRow));
+
+  if (m.url && pinned) {
+    const link = document.createElement("a");
+    link.className = "tt-link";
+    link.href = m.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Product page";
+    ttDetail.appendChild(link);
+  }
+
+  const db = dotEls[i].getBoundingClientRect();
+  const width = tooltip.offsetWidth;
   let tx = db.right + 12,
     ty = db.top - 20;
-  if (tx + 260 > window.innerWidth) tx = db.left - 260;
+  if (tx + width > window.innerWidth) tx = db.left - 12 - width;
   if (ty < 10) ty = 10;
   tooltip.style.left = tx + "px";
   tooltip.style.top = ty + "px";
-  ttName.textContent = m.name + (m.upcoming ? " (upcoming)" : "");
-  ttDetail.innerHTML =
-    "Size: " +
-    m.wIn.toFixed(1) +
-    '" x ' +
-    m.hIn.toFixed(1) +
-    '"<br>' +
-    "Diagonal: " +
-    m.diag +
-    '"<br>' +
-    "Area: " +
-    m.area.toFixed(0) +
-    " in&sup2;<br>" +
-    "Resolution: " +
-    m.w +
-    " x " +
-    m.h +
-    "<br>" +
-    "Megapixels: " +
-    m.mp.toFixed(1) +
-    " MP<br>" +
-    "PPI: " +
-    m.ppi.toFixed(0) +
-    "<br>" +
-    "Aspect Ratio: " +
-    m.ar.toFixed(2) +
-    "<br>" +
-    "Refresh Rate: " +
-    m.hz +
-    " Hz<br>" +
-    "Panel: " +
-    m.panel;
 }
 
 function unpinDot() {
-  if (pinnedDotIndex !== null) {
-    dotEls[pinnedDotIndex].classList.remove("pinned");
-    pinnedDotIndex = null;
-    tooltip.style.display = "none";
-  }
+  if (pinnedDotIndex === null) return;
+  dotEls[pinnedDotIndex].classList.remove("pinned");
+  pinnedDotIndex = null;
+  tooltip.classList.remove("pinned");
+  tooltip.style.display = "none";
 }
 
 function makeKeyboardButton(el, ariaLabel) {
@@ -978,9 +812,13 @@ function makeKeyboardButton(el, ariaLabel) {
 
 function createDots() {
   monitors.forEach((m, i) => {
+    const cat = categories[m.cat];
     const dot = document.createElement("div");
-    dot.className = "dot" + (m.upcoming ? " upcoming" : "");
-    dot.style.setProperty("--cat-color", categories[m.cat].color);
+    dot.className =
+      "dot" +
+      (m.upcoming ? " upcoming" : "") +
+      (cat.shape === "diamond" ? " diamond" : "");
+    dot.style.setProperty("--cat-color", cat.color);
     makeKeyboardButton(
       dot,
       `${m.name}${m.upcoming ? " (upcoming)" : ""}, ${m.w} x ${m.h}, ${m.diag} inch, ${m.hz} Hz, ${m.panel}`,
@@ -988,8 +826,8 @@ function createDots() {
 
     let hoverTimer = null;
     dot.addEventListener("mouseenter", () => {
-      if (pinnedDotIndex !== null && pinnedDotIndex !== i) return;
-      hoverTimer = setTimeout(() => showTooltipForDot(dot, m), 150);
+      if (pinnedDotIndex !== null) return;
+      hoverTimer = setTimeout(() => showTooltip(i), 150);
     });
     dot.addEventListener("mouseleave", () => {
       clearTimeout(hoverTimer);
@@ -997,24 +835,19 @@ function createDots() {
       tooltip.style.display = "none";
     });
     dot.addEventListener("focus", () => {
-      if (pinnedDotIndex === null) showTooltipForDot(dot, m);
+      if (pinnedDotIndex === null) showTooltip(i);
     });
     dot.addEventListener("blur", () => {
       if (pinnedDotIndex === null) tooltip.style.display = "none";
     });
     dot.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (pinnedDotIndex === i) {
-        unpinDot();
-      } else {
-        unpinDot();
-        pinnedDotIndex = i;
-        dot.classList.add("pinned");
-        // Only reposition if tooltip isn't already visible (e.g. touch)
-        if (tooltip.style.display !== "block") {
-          showTooltipForDot(dot, m);
-        }
-      }
+      const wasPinned = pinnedDotIndex === i;
+      unpinDot();
+      if (wasPinned) return;
+      pinnedDotIndex = i;
+      dot.classList.add("pinned");
+      showTooltip(i);
     });
 
     chartArea.appendChild(dot);
@@ -1027,45 +860,23 @@ function createDots() {
     labelEls.push(label);
   });
 
-  // Click anywhere else to unpin
-  document.addEventListener("click", () => {
-    unpinDot();
-  });
+  tooltip.addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", unpinDot);
 }
 
-// Build groups based on screen-space proximity (union-find clustering)
-const CLUSTER_THRESHOLD = 20; // pixels -- dots closer than this collapse
+const CLUSTER_THRESHOLD = 20;
 
 function buildGroups() {
-  // Compute target ranges to get screen positions
-  const vis = monitors.filter((_, i) => visibleMonitors.has(i));
-  const src = vis.length > 0 ? vis : monitors;
-  const tX = niceRange(
-    src.map((m) => m[xAxisKey]),
-    0.15,
-  );
-  const tY = niceRange(
-    src.map((m) => m[yAxisKey]),
-    0.15,
-  );
-
+  const target = targetRanges();
   measureChart();
 
-  const tXSpan = tX.max - tX.min || 1;
-  const tYSpan = tY.max - tY.min || 1;
-  function tmpXPos(v) {
-    return ((v - tX.min) / tXSpan) * W;
-  }
-  function tmpYPos(v) {
-    return H - ((v - tY.min) / tYSpan) * H;
-  }
-
+  const xSpan = target.x.max - target.x.min || 1;
+  const ySpan = target.y.max - target.y.min || 1;
   const positions = monitors.map((m) => ({
-    x: tmpXPos(m[xAxisKey]),
-    y: tmpYPos(m[yAxisKey]),
+    x: ((m[xAxisKey] - target.x.min) / xSpan) * W,
+    y: H - ((m[yAxisKey] - target.y.min) / ySpan) * H,
   }));
 
-  // Union-Find -- only cluster visible monitors
   const parent = monitors.map((_, i) => i);
 
   function find(i) {
@@ -1076,74 +887,56 @@ function buildGroups() {
     return i;
   }
 
-  function union(a, b) {
-    const ra = find(a),
-      rb = find(b);
-    if (ra !== rb) parent[rb] = ra;
-  }
-
-  const visArr = [...visibleMonitors];
-  for (let a = 0; a < visArr.length; a++) {
-    for (let b = a + 1; b < visArr.length; b++) {
-      const i = visArr[a],
-        j = visArr[b];
+  const plottedIndices = [...plotted];
+  for (let a = 0; a < plottedIndices.length; a++) {
+    for (let b = a + 1; b < plottedIndices.length; b++) {
+      const i = plottedIndices[a],
+        j = plottedIndices[b];
       const dx = positions[i].x - positions[j].x;
       const dy = positions[i].y - positions[j].y;
       if (Math.sqrt(dx * dx + dy * dy) < CLUSTER_THRESHOLD) {
-        union(i, j);
+        const ri = find(i),
+          rj = find(j);
+        if (ri !== rj) parent[rj] = ri;
       }
     }
   }
 
   const newGroups = {};
-  for (const i of visibleMonitors) {
-    const root = find(i);
-    const key = "g" + root;
+  plottedIndices.forEach((i) => {
+    const key = "g" + find(i);
     if (!newGroups[key]) newGroups[key] = { indices: [], expanded: false };
     newGroups[key].indices.push(i);
-  }
-
+  });
   return newGroups;
 }
 
 function destroyClusters() {
-  Object.keys(badgeEls).forEach((key) => {
-    if (badgeEls[key]) badgeEls[key].remove();
-  });
+  Object.values(badgeEls).forEach((badge) => badge.remove());
   badgeEls = {};
 }
 
-function getExpandedBounds(groupObj) {
-  const indices = groupObj.indices.filter((mi) => visibleMonitors.has(mi));
-  if (indices.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-  const cx =
-    indices.reduce((s, i) => s + xPos(monitors[i][xAxisKey]), 0) /
-    indices.length;
-  const cy =
-    indices.reduce((s, i) => s + yPos(monitors[i][yAxisKey]), 0) /
-    indices.length;
-  const offsets = fanOffsets(indices.length);
+function getExpandedBounds(group) {
+  const { cx, cy } = groupCentroid(group.indices);
+  const offsets = fanOffsets(group.indices.length);
   let minX = cx,
     maxX = cx,
     minY = cy,
     maxY = cy;
-  indices.forEach((mi, j) => {
+  group.indices.forEach((mi, j) => {
     const x = cx + offsets[j].dx,
       y = cy + offsets[j].dy;
-    const lw = labelEls[mi].offsetWidth || 70;
-    minX = Math.min(minX, x - 8);
-    maxX = Math.max(maxX, x + 8);
-    minY = Math.min(minY, y - 8);
-    maxY = Math.max(maxY, y + 8);
     if (offsets[j].dx < -3) {
-      minX = Math.min(minX, x - 8 - lw);
+      minX = Math.min(minX, x - 8 - labelWidths[mi]);
+      maxX = Math.max(maxX, x + 8);
     } else {
-      maxX = Math.max(maxX, x + 8 + lw);
+      minX = Math.min(minX, x - 8);
+      maxX = Math.max(maxX, x + 8 + labelWidths[mi]);
     }
     minY = Math.min(minY, y - 14);
     maxY = Math.max(maxY, y + 14);
   });
-  return { minX, maxX, minY, maxY };
+  return { left: minX, right: maxX, top: minY, bottom: maxY };
 }
 
 function createClusters() {
@@ -1158,32 +951,23 @@ function createClusters() {
       `${group.indices.length} overlapping monitors, toggle to spread them out`,
     );
     badge.addEventListener("click", () => {
-      // Add animation class before toggling
       group.indices.forEach((mi) => {
         dotEls[mi].classList.add("fan-animate");
         labelEls[mi].classList.add("fan-animate");
       });
       group.expanded = !group.expanded;
 
-      // If expanding, collapse other expanded clusters whose labels would overlap
       if (group.expanded) {
         const myBounds = getExpandedBounds(group);
-        Object.entries(groups).forEach(([otherKey, otherGroup]) => {
-          if (otherKey === key || !otherGroup.expanded) return;
-          const otherBounds = getExpandedBounds(otherGroup);
-          if (
-            myBounds.maxX > otherBounds.minX &&
-            myBounds.minX < otherBounds.maxX &&
-            myBounds.maxY > otherBounds.minY &&
-            myBounds.minY < otherBounds.maxY
-          ) {
-            otherGroup.expanded = false;
+        Object.values(groups).forEach((other) => {
+          if (other === group || !other.expanded) return;
+          if (rectsOverlap(myBounds, getExpandedBounds(other))) {
+            other.expanded = false;
           }
         });
       }
 
       positionDots();
-      // Remove animation class after transition completes
       setTimeout(() => {
         group.indices.forEach((mi) => {
           dotEls[mi].classList.remove("fan-animate");
@@ -1193,318 +977,8 @@ function createClusters() {
     });
     chartArea.appendChild(badge);
     badgeEls[key] = badge;
+    group.badgeSize = { width: badge.offsetWidth, height: badge.offsetHeight };
   });
-}
-
-const checkboxEls = [];
-const catCheckboxEls = {};
-let allMonitorsCb = null;
-
-function buildMonitorPanel() {
-  const container = document.getElementById("monitorPanel");
-  container.innerHTML = "";
-  const panel = document.createElement("div");
-  panel.className = "monitor-panel";
-
-  const allLabel = document.createElement("label");
-  allLabel.className = "monitor-list-category-title monitor-list-all";
-  const allCb = document.createElement("input");
-  allCb.type = "checkbox";
-  const allCount = monitors.filter((_, i) => visibleMonitors.has(i)).length;
-  allCb.checked = allCount > 0;
-  allCb.indeterminate = allCount > 0 && allCount < monitors.length;
-  allCb.addEventListener("change", () => {
-    monitors.forEach((_, i) => {
-      if (allCb.checked) visibleMonitors.add(i);
-      else visibleMonitors.delete(i);
-      if (checkboxEls[i]) checkboxEls[i].checked = allCb.checked;
-    });
-    Object.values(catCheckboxEls).forEach((cb) => {
-      cb.checked = allCb.checked;
-      cb.indeterminate = false;
-    });
-    updateVisibility();
-  });
-  allLabel.appendChild(allCb);
-  allLabel.appendChild(document.createTextNode("Show all"));
-  panel.appendChild(allLabel);
-  allMonitorsCb = allCb;
-
-  const list = document.createElement("div");
-  list.className = "monitor-list open";
-
-  sortedCategories().forEach(({ key: catKey, indices }) => {
-    const cat = categories[catKey];
-
-    if (indices.length === 1) {
-      const i = indices[0];
-      const label = document.createElement("label");
-      label.className = "monitor-list-category-title";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = visibleMonitors.has(i);
-      cb.addEventListener("change", () => {
-        if (cb.checked) {
-          visibleMonitors.add(i);
-        } else {
-          visibleMonitors.delete(i);
-        }
-        updateVisibility();
-      });
-      label.appendChild(cb);
-      const catDot = document.createElement("div");
-      catDot.className = "cat-dot";
-      catDot.style.background = cat.color;
-      label.appendChild(catDot);
-      label.appendChild(document.createTextNode(monitors[i].shortName));
-      if (monitors[i].upcoming) {
-        const tag = document.createElement("span");
-        tag.className = "unreleased-tag";
-        tag.textContent = "(unreleased)";
-        label.appendChild(tag);
-      }
-      checkboxEls[i] = cb;
-      catCheckboxEls[catKey] = cb;
-      list.appendChild(label);
-      return;
-    }
-
-    const section = document.createElement("div");
-    section.className = "monitor-list-category";
-
-    const title = document.createElement("label");
-    title.className = "monitor-list-category-title";
-    const catCb = document.createElement("input");
-    catCb.type = "checkbox";
-    const checkedCount = indices.filter((i) => visibleMonitors.has(i)).length;
-    catCb.checked = checkedCount > 0;
-    catCb.indeterminate = checkedCount > 0 && checkedCount < indices.length;
-    catCb.addEventListener("change", () => {
-      indices.forEach((i) => {
-        if (catCb.checked) {
-          visibleMonitors.add(i);
-        } else {
-          visibleMonitors.delete(i);
-        }
-        if (checkboxEls[i]) checkboxEls[i].checked = catCb.checked;
-      });
-      updateVisibility();
-    });
-    catCheckboxEls[catKey] = catCb;
-    title.appendChild(catCb);
-    const catDot = document.createElement("div");
-    catDot.className = "cat-dot";
-    catDot.style.background = cat.color;
-    title.appendChild(catDot);
-    title.appendChild(document.createTextNode(cat.label));
-    section.appendChild(title);
-
-    const items = document.createElement("div");
-    items.className = "monitor-list-items";
-
-    indices.forEach((i) => {
-      const label = document.createElement("label");
-      label.className = "monitor-checkbox-label";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = visibleMonitors.has(i);
-      cb.addEventListener("change", () => {
-        if (cb.checked) {
-          visibleMonitors.add(i);
-        } else {
-          visibleMonitors.delete(i);
-        }
-        updateVisibility();
-      });
-      label.appendChild(cb);
-      label.appendChild(document.createTextNode(monitors[i].shortName));
-      if (monitors[i].upcoming) {
-        const tag = document.createElement("span");
-        tag.className = "unreleased-tag";
-        tag.textContent = "(unreleased)";
-        label.appendChild(tag);
-      }
-      items.appendChild(label);
-      checkboxEls[i] = cb;
-    });
-
-    section.appendChild(items);
-    list.appendChild(section);
-  });
-
-  panel.appendChild(list);
-  container.appendChild(panel);
-
-  // Move entire monitor panel before the panels-row so it spans full width
-  const panelsRow = container.parentElement;
-  panelsRow.before(container);
-}
-
-function buildRefLinesPanel() {
-  const container = document.getElementById("refLinesPanel");
-  container.innerHTML = "";
-
-  const panel = document.createElement("div");
-  panel.className = "ref-lines-panel";
-
-  const sections = [
-    {
-      heading: "Aspect Ratio",
-      data: ratioLines,
-      enabled: ratioEnabled,
-      onUpdate: () => {
-        updateLabelMargin();
-        updateRatioLines();
-        avoidRefLabelOverlap();
-      },
-    },
-    {
-      heading: "Megapixels",
-      data: mpCurves,
-      enabled: mpEnabled,
-      onUpdate: () => {
-        updateLabelMargin();
-        updateMpCurves();
-        avoidRefLabelOverlap();
-      },
-    },
-    {
-      heading: "Screen Area",
-      data: areaCurves,
-      enabled: areaEnabled,
-      onUpdate: () => {
-        updateLabelMargin();
-        updateAreaCurves();
-        avoidRefLabelOverlap();
-      },
-    },
-    {
-      heading: "PPI",
-      data: ppiLines,
-      enabled: ppiEnabled,
-      onUpdate: () => {
-        updateLabelMargin();
-        updatePpiLines();
-        avoidRefLabelOverlap();
-      },
-    },
-  ];
-
-  sections.forEach(({ heading, data, enabled, onUpdate }) => {
-    const section = document.createElement("div");
-    section.className = "ref-lines-section";
-
-    const headingEl = document.createElement("div");
-    headingEl.className = "ref-lines-heading";
-
-    const headingText = document.createElement("span");
-    headingText.textContent = heading;
-    headingEl.appendChild(headingText);
-
-    const allCb = document.createElement("input");
-    allCb.type = "checkbox";
-    allCb.checked = enabled.size > 0;
-    allCb.indeterminate = enabled.size > 0 && enabled.size < data.length;
-    headingEl.appendChild(allCb);
-    const allText = document.createElement("span");
-    allText.className = "ref-lines-all-label";
-    allText.textContent = "all";
-    headingEl.appendChild(allText);
-
-    section.appendChild(headingEl);
-
-    const items = document.createElement("div");
-    items.className = "ref-lines-items";
-
-    const cbs = [];
-    data.forEach((entry, i) => {
-      const label = document.createElement("label");
-      label.className = "monitor-checkbox-label";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = enabled.has(i);
-      cb.addEventListener("change", () => {
-        if (cb.checked) {
-          enabled.add(i);
-        } else {
-          enabled.delete(i);
-        }
-        allCb.checked = enabled.size > 0;
-        allCb.indeterminate = enabled.size > 0 && enabled.size < data.length;
-        onUpdate();
-      });
-      cbs.push(cb);
-      label.appendChild(cb);
-      const dot = document.createElement("div");
-      dot.className = "cat-dot";
-      dot.style.background = entry.color;
-      label.appendChild(dot);
-      label.appendChild(document.createTextNode(entry.name));
-      items.appendChild(label);
-    });
-
-    allCb.addEventListener("change", () => {
-      data.forEach((_, i) => {
-        if (allCb.checked) {
-          enabled.add(i);
-        } else {
-          enabled.delete(i);
-        }
-        cbs[i].checked = allCb.checked;
-      });
-      allCb.indeterminate = false;
-      onUpdate();
-    });
-
-    section.appendChild(items);
-    panel.appendChild(section);
-  });
-
-  container.appendChild(panel);
-}
-
-function updateVisibility() {
-  // Sync visibility from the individual monitor checkboxes
-  monitors.forEach((m, i) => {
-    const checkboxOn = checkboxEls[i] ? checkboxEls[i].checked : true;
-    if (checkboxOn) {
-      visibleMonitors.add(i);
-    } else {
-      visibleMonitors.delete(i);
-    }
-  });
-
-  // Sync category checkbox states (based on individual checkbox states, not visibility,
-  // so that filters don't permanently uncheck monitors)
-  const grouped = {};
-  monitors.forEach((m, i) => {
-    if (!grouped[m.cat]) grouped[m.cat] = [];
-    grouped[m.cat].push(i);
-  });
-  Object.entries(grouped).forEach(([catKey, indices]) => {
-    if (!catCheckboxEls[catKey]) return;
-    if (indices.length === 1) return; // single-monitor: checkbox IS the control
-    const checkedCount = indices.filter(
-      (i) => checkboxEls[i] && checkboxEls[i].checked,
-    ).length;
-    catCheckboxEls[catKey].checked = checkedCount > 0;
-    catCheckboxEls[catKey].indeterminate =
-      checkedCount > 0 && checkedCount < indices.length;
-  });
-
-  // Sync "Show all" checkbox
-  if (allMonitorsCb) {
-    const totalChecked = monitors.filter(
-      (_, i) => checkboxEls[i] && checkboxEls[i].checked,
-    ).length;
-    allMonitorsCb.checked = totalChecked > 0;
-    allMonitorsCb.indeterminate =
-      totalChecked > 0 && totalChecked < monitors.length;
-  }
-
-  rebuildGroupsKeepingExpanded();
-
-  rerender();
 }
 
 function rebuildGroupsKeepingExpanded() {
@@ -1525,12 +999,207 @@ function rebuildGroupsKeepingExpanded() {
   createClusters();
 }
 
-// Axis controls
-const AXIS_GROUPS = [
-  { label: "Physical Size", keys: ["wIn", "hIn", "diag", "area"] },
-  { label: "Resolution", keys: ["w", "h", "mp"] },
-  { label: "Other", keys: ["ppi", "ar", "hz"] },
-];
+const checkboxEls = [];
+const catCheckboxEls = {};
+let allMonitorsCb = null;
+
+function unreleasedTag() {
+  const tag = document.createElement("span");
+  tag.className = "unreleased-tag";
+  tag.textContent = "(unreleased)";
+  return tag;
+}
+
+function monitorCheckbox(i) {
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = visibleMonitors.has(i);
+  cb.addEventListener("change", updateVisibility);
+  checkboxEls[i] = cb;
+  return cb;
+}
+
+function buildMonitorPanel() {
+  const container = document.getElementById("monitorPanel");
+  container.innerHTML = "";
+  const panel = document.createElement("div");
+  panel.className = "monitor-panel";
+
+  const allLabel = document.createElement("label");
+  allLabel.className = "monitor-list-category-title monitor-list-all";
+  const allCb = document.createElement("input");
+  allCb.type = "checkbox";
+  allCb.addEventListener("change", () => {
+    checkboxEls.forEach((cb) => (cb.checked = allCb.checked));
+    updateVisibility();
+  });
+  allLabel.appendChild(allCb);
+  allLabel.appendChild(document.createTextNode("Show all"));
+  panel.appendChild(allLabel);
+  allMonitorsCb = allCb;
+
+  const list = document.createElement("div");
+  list.className = "monitor-list open";
+
+  sortedCategories().forEach(({ key: catKey, indices }) => {
+    const cat = categories[catKey];
+
+    if (indices.length === 1) {
+      const i = indices[0];
+      const label = document.createElement("label");
+      label.className = "monitor-list-category-title";
+      label.appendChild(monitorCheckbox(i));
+      label.appendChild(categorySwatch("cat-dot", cat));
+      label.appendChild(document.createTextNode(monitors[i].shortName));
+      if (monitors[i].upcoming) label.appendChild(unreleasedTag());
+      list.appendChild(label);
+      return;
+    }
+
+    const section = document.createElement("div");
+    section.className = "monitor-list-category";
+
+    const title = document.createElement("label");
+    title.className = "monitor-list-category-title";
+    const catCb = document.createElement("input");
+    catCb.type = "checkbox";
+    catCb.addEventListener("change", () => {
+      indices.forEach((i) => (checkboxEls[i].checked = catCb.checked));
+      updateVisibility();
+    });
+    catCheckboxEls[catKey] = { cb: catCb, indices };
+    title.appendChild(catCb);
+    title.appendChild(categorySwatch("cat-dot", cat));
+    title.appendChild(document.createTextNode(cat.label));
+    section.appendChild(title);
+
+    const items = document.createElement("div");
+    items.className = "monitor-list-items";
+    indices.forEach((i) => {
+      const label = document.createElement("label");
+      label.className = "monitor-checkbox-label";
+      label.appendChild(monitorCheckbox(i));
+      label.appendChild(document.createTextNode(monitors[i].shortName));
+      if (monitors[i].upcoming) label.appendChild(unreleasedTag());
+      items.appendChild(label);
+    });
+
+    section.appendChild(items);
+    list.appendChild(section);
+  });
+
+  panel.appendChild(list);
+  container.appendChild(panel);
+  syncGroupCheckboxes();
+
+  // The monitor panel spans the full width, so it sits above the panels row.
+  container.parentElement.before(container);
+}
+
+function setTriState(cb, checkedCount, total) {
+  cb.checked = checkedCount > 0;
+  cb.indeterminate = checkedCount > 0 && checkedCount < total;
+}
+
+function syncGroupCheckboxes() {
+  Object.values(catCheckboxEls).forEach(({ cb, indices }) => {
+    const checkedCount = indices.filter((i) => checkboxEls[i].checked).length;
+    setTriState(cb, checkedCount, indices.length);
+  });
+  setTriState(
+    allMonitorsCb,
+    checkboxEls.filter((cb) => cb.checked).length,
+    monitors.length,
+  );
+}
+
+function updateVisibility() {
+  visibleMonitors = new Set(
+    monitors.map((_, i) => i).filter((i) => checkboxEls[i].checked),
+  );
+  syncGroupCheckboxes();
+  refreshPlotted();
+  rebuildGroupsKeepingExpanded();
+  rerender();
+  writeUrlState();
+}
+
+function onRefLineToggle() {
+  relayout();
+  writeUrlState();
+}
+
+function buildRefLinesPanel() {
+  const container = document.getElementById("refLinesPanel");
+  container.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "ref-lines-panel";
+
+  REF_KINDS.forEach((kind) => {
+    const entries = refLines.filter((ref) => ref.kind === kind);
+    const enabledCount = () => entries.filter((ref) => ref.enabled).length;
+
+    const section = document.createElement("div");
+    section.className = "ref-lines-section";
+
+    const headingEl = document.createElement("div");
+    headingEl.className = "ref-lines-heading";
+
+    const headingText = document.createElement("span");
+    headingText.textContent = kind.heading;
+    headingEl.appendChild(headingText);
+
+    const allCb = document.createElement("input");
+    allCb.type = "checkbox";
+    allCb.setAttribute("aria-label", `All ${kind.heading} reference lines`);
+    setTriState(allCb, enabledCount(), entries.length);
+    headingEl.appendChild(allCb);
+    const allText = document.createElement("span");
+    allText.className = "ref-lines-all-label";
+    allText.textContent = "all";
+    headingEl.appendChild(allText);
+
+    section.appendChild(headingEl);
+
+    const items = document.createElement("div");
+    items.className = "ref-lines-items";
+
+    const cbs = entries.map((ref) => {
+      const label = document.createElement("label");
+      label.className = "monitor-checkbox-label";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = ref.enabled;
+      cb.addEventListener("change", () => {
+        ref.enabled = cb.checked;
+        setTriState(allCb, enabledCount(), entries.length);
+        onRefLineToggle();
+      });
+      label.appendChild(cb);
+      const dot = document.createElement("div");
+      dot.className = "cat-dot";
+      dot.style.background = ref.data.color;
+      label.appendChild(dot);
+      label.appendChild(document.createTextNode(ref.data.name));
+      items.appendChild(label);
+      return cb;
+    });
+
+    allCb.addEventListener("change", () => {
+      entries.forEach((ref, i) => {
+        ref.enabled = allCb.checked;
+        cbs[i].checked = allCb.checked;
+      });
+      onRefLineToggle();
+    });
+
+    section.appendChild(items);
+    panel.appendChild(section);
+  });
+
+  container.appendChild(panel);
+}
 
 function buildAxisSelect(selectedKey) {
   const select = document.createElement("select");
@@ -1549,197 +1218,159 @@ function buildAxisSelect(selectedKey) {
   return select;
 }
 
+function buildAxisControl(text, selectedKey) {
+  const group = document.createElement("label");
+  group.className = "axis-control-group";
+  const caption = document.createElement("span");
+  caption.textContent = text;
+  group.appendChild(caption);
+  const select = buildAxisSelect(selectedKey);
+  group.appendChild(select);
+  document.getElementById("axisControls").appendChild(group);
+  return select;
+}
+
 function buildAxisControls() {
-  const container = document.getElementById("axisControls");
-  container.innerHTML = "";
-
-  // X axis
-  const xGroup = document.createElement("div");
-  xGroup.className = "axis-control-group";
-  const xLabel = document.createElement("label");
-  xLabel.textContent = "X:";
-  xGroup.appendChild(xLabel);
-  const xSelect = buildAxisSelect(xAxisKey);
-  xGroup.appendChild(xSelect);
-  container.appendChild(xGroup);
-
-  // Y axis
-  const yGroup = document.createElement("div");
-  yGroup.className = "axis-control-group";
-  const yLabel = document.createElement("label");
-  yLabel.textContent = "Y:";
-  yGroup.appendChild(yLabel);
-  const ySelect = buildAxisSelect(yAxisKey);
-  yGroup.appendChild(ySelect);
-  container.appendChild(yGroup);
-
+  document.getElementById("axisControls").innerHTML = "";
+  const xSelect = buildAxisControl("X:", xAxisKey);
+  const ySelect = buildAxisControl("Y:", yAxisKey);
   xSelect.addEventListener("change", () => switchAxes(xSelect.value, yAxisKey));
   ySelect.addEventListener("change", () => switchAxes(xAxisKey, ySelect.value));
+}
+
+function updateAxisTitles() {
+  document.getElementById("xAxisTitle").textContent =
+    AXES[xAxisKey].label + " →";
+  document.getElementById("yAxisTitle").textContent =
+    AXES[yAxisKey].label + " →";
 }
 
 function switchAxes(newX, newY) {
   xAxisKey = newX;
   yAxisKey = newY;
-
-  // Update axis title text
-  document.getElementById("xAxisTitle").innerHTML =
-    AXES[xAxisKey].label + " &#8594;";
-  document.getElementById("yAxisTitle").innerHTML =
-    AXES[yAxisKey].label + " &#8594;";
-
-  // Rebuild groups for new axes
+  updateAxisTitles();
+  refreshPlotted();
+  updateLabelMargin();
   destroyClusters();
   groups = buildGroups();
   createClusters();
-
-  // Update label margin based on axis mode
-  updateLabelMargin();
-
   rerender();
+  writeUrlState();
+}
+
+function drawFrame() {
+  measureChart();
+  drawGrid();
+  updateRefLines();
+  positionDots();
 }
 
 let animationId = null;
 const ANIM_DURATION = 350;
 
 function rerender() {
-  // Compute target ranges from visible monitors
-  const visMonitors = monitors.filter((_, i) => visibleMonitors.has(i));
-  let targetX, targetY;
-  if (visMonitors.length === 0) {
-    targetX = { min: xRange.min, max: xRange.max };
-    targetY = { min: yRange.min, max: yRange.max };
-  } else {
-    targetX = niceRange(
-      visMonitors.map((m) => m[xAxisKey]),
-      0.15,
-    );
-    targetY = niceRange(
-      visMonitors.map((m) => m[yAxisKey]),
-      0.15,
-    );
-  }
+  const target = targetRanges();
+  unpinDot();
+  applyPlottedDisplay();
 
-  // Apply visibility immediately
-  monitors.forEach((_, i) => {
-    const show = visibleMonitors.has(i);
-    dotEls[i].style.display = show ? "" : "none";
-    labelEls[i].style.display = show ? "" : "none";
-  });
-
-  const startX = { min: xRange.min, max: xRange.max };
-  const startY = { min: yRange.min, max: yRange.max };
+  const startX = { ...xRange };
+  const startY = { ...yRange };
   const startTime = performance.now();
 
   if (animationId) cancelAnimationFrame(animationId);
 
   function tick(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(1, elapsed / ANIM_DURATION);
+    const t = Math.min(1, (now - startTime) / ANIM_DURATION);
     const e = 1 - Math.pow(1 - t, 3);
 
     xRange = {
-      min: startX.min + (targetX.min - startX.min) * e,
-      max: startX.max + (targetX.max - startX.max) * e,
+      min: startX.min + (target.x.min - startX.min) * e,
+      max: startX.max + (target.x.max - startX.max) * e,
     };
     yRange = {
-      min: startY.min + (targetY.min - startY.min) * e,
-      max: startY.max + (targetY.max - startY.max) * e,
+      min: startY.min + (target.y.min - startY.min) * e,
+      max: startY.max + (target.y.max - startY.max) * e,
     };
 
-    measureChart();
-    drawGrid();
-    updateRatioLines();
-    updateMpCurves();
-    updateAreaCurves();
-    updatePpiLines();
-    avoidRefLabelOverlap();
-    positionDots();
-
-    if (t < 1) {
-      animationId = requestAnimationFrame(tick);
-    } else {
-      animationId = null;
-    }
+    drawFrame();
+    animationId = t < 1 ? requestAnimationFrame(tick) : null;
   }
 
   animationId = requestAnimationFrame(tick);
 }
 
-let labelMarginRight = 20;
-
-function measureLabelMargin() {
-  let maxW = 0;
-  ratioLineEls.forEach(({ label }) => {
-    maxW = Math.max(maxW, label.offsetWidth);
-  });
-  mpCurveEls.forEach(({ label }) => {
-    maxW = Math.max(maxW, label.offsetWidth);
-  });
-  areaCurveEls.forEach(({ label }) => {
-    maxW = Math.max(maxW, label.offsetWidth);
-  });
-  ppiLineEls.forEach(({ label }) => {
-    maxW = Math.max(maxW, label.offsetWidth);
-  });
-  labelMarginRight = maxW + 14;
-  chartArea.style.right = labelMarginRight + "px";
-  measureChart();
+function relayout() {
+  if (animationId) cancelAnimationFrame(animationId);
+  animationId = null;
+  updateLabelMargin();
+  rebuildGroupsKeepingExpanded();
+  const target = targetRanges();
+  xRange = target.x;
+  yRange = target.y;
+  drawFrame();
 }
 
-function updateLabelMargin() {
-  const whAxes = new Set(["w", "h"]);
-  const whInAxes = new Set(["wIn", "hIn"]);
-  const isWH =
-    whAxes.has(xAxisKey) && whAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const isWInHIn =
-    whInAxes.has(xAxisKey) && whInAxes.has(yAxisKey) && xAxisKey !== yAxisKey;
-  const hasAr = xAxisKey === "ar" || yAxisKey === "ar";
-  const hasRatio = ratioEnabled.size > 0;
-  const hasMp = mpEnabled.size > 0;
-  const isAreaMp =
-    (xAxisKey === "area" && yAxisKey === "mp") ||
-    (xAxisKey === "mp" && yAxisKey === "area");
-  const hasArea = areaEnabled.size > 0;
-  const hasPpi = ppiEnabled.size > 0;
-  const isAreaPpi =
-    (xAxisKey === "area" && yAxisKey === "ppi") ||
-    (xAxisKey === "ppi" && yAxisKey === "area");
-  const needsMargin =
-    (isWH && (hasRatio || hasMp)) ||
-    (hasAr && hasRatio) ||
-    (isWInHIn && (hasRatio || hasArea)) ||
-    (isAreaMp && hasPpi) ||
-    (isAreaPpi && hasMp);
-  chartArea.style.right = needsMargin ? labelMarginRight + "px" : "20px";
-  measureChart();
-}
+const LIST_SEPARATOR = ".";
 
-function render() {
-  computeLayout();
-  createRefSvg();
-  createRatioLines();
-  createMpCurves();
-  createAreaCurves();
-  createPpiLines();
-  measureLabelMargin();
-  drawGrid();
-  updateRatioLines();
-  updateMpCurves();
-  updateAreaCurves();
-  updatePpiLines();
-  avoidRefLabelOverlap();
-  createDots();
+function readUrlState() {
+  const params = new URLSearchParams(location.hash.slice(1));
+  const list = (key) =>
+    (params.get(key) || "").split(LIST_SEPARATOR).filter(Boolean);
 
-  // Hide non-visible monitors
-  monitors.forEach((_, i) => {
-    if (!visibleMonitors.has(i)) {
-      dotEls[i].style.display = "none";
-      labelEls[i].style.display = "none";
-    }
+  if (AXES[params.get("x")]) xAxisKey = params.get("x");
+  if (AXES[params.get("y")]) yAxisKey = params.get("y");
+
+  const show = new Set(list("show"));
+  const hide = new Set(list("hide"));
+  monitors.forEach((m, i) => {
+    const visible = (!m.upcoming || show.has(m.id)) && !hide.has(m.id);
+    if (visible) visibleMonitors.add(i);
   });
 
-  createClusters();
-  positionDots();
+  const refOn = new Set(list("refon"));
+  const refOff = new Set(list("refoff"));
+  refLines.forEach((ref) => {
+    ref.enabled = (ref.enabled || refOn.has(ref.id)) && !refOff.has(ref.id);
+  });
+}
+
+function writeUrlState() {
+  const params = new URLSearchParams();
+  const setList = (key, ids) => {
+    if (ids.length > 0) params.set(key, ids.join(LIST_SEPARATOR));
+  };
+
+  if (xAxisKey !== DEFAULT_X_AXIS) params.set("x", xAxisKey);
+  if (yAxisKey !== DEFAULT_Y_AXIS) params.set("y", yAxisKey);
+
+  const shownByDefault = (m) => !m.upcoming;
+  const ids = (predicate) =>
+    monitors.filter((m, i) => predicate(m, i)).map((m) => m.id);
+  setList(
+    "show",
+    ids((m, i) => visibleMonitors.has(i) && !shownByDefault(m)),
+  );
+  setList(
+    "hide",
+    ids((m, i) => !visibleMonitors.has(i) && shownByDefault(m)),
+  );
+
+  const refIds = (predicate) => refLines.filter(predicate).map((r) => r.id);
+  setList(
+    "refon",
+    refIds((r) => r.enabled && !r.data.default),
+  );
+  setList(
+    "refoff",
+    refIds((r) => !r.enabled && r.data.default),
+  );
+
+  const hash = params.toString();
+  history.replaceState(
+    null,
+    "",
+    hash ? "#" + hash : location.pathname + location.search,
+  );
 }
 
 async function loadData() {
@@ -1768,71 +1399,65 @@ function showLoadError(err) {
   chartArea.appendChild(message);
 }
 
+function addDerivedProperties(m) {
+  const diagPx = Math.sqrt(m.w * m.w + m.h * m.h);
+  m.id = slug(m.name);
+  m.ppi = diagPx / m.diag;
+  m.mp = (m.w * m.h) / 1e6;
+  m.wIn = (m.diag * m.w) / diagPx;
+  m.hIn = (m.diag * m.h) / diagPx;
+  m.area = m.wIn * m.hIn;
+  m.ar = m.w / m.h;
+}
+
 async function init() {
   const data = await loadData();
 
   monitors = data.monitors;
   categories = data.categories;
-  ratioLines = data.ratioLines;
-  mpCurves = data.mpCurves;
-  areaCurves = data.areaCurves;
-  ppiLines = data.ppiLines;
+  pricesChecked = data.pricesChecked;
+  monitors.forEach(addDerivedProperties);
+  refLines = REF_KINDS.flatMap((kind) =>
+    data[kind.source].map((entry) => ({
+      kind,
+      data: entry,
+      id: kind.id + "-" + slug(entry.name),
+      enabled: Boolean(entry.default),
+    })),
+  );
 
-  // Compute derived properties
-  monitors.forEach((m) => {
-    m.ppi = Math.sqrt(m.w * m.w + m.h * m.h) / m.diag;
-    m.mp = (m.w * m.h) / 1e6;
-    const hyp = Math.sqrt(m.w * m.w + m.h * m.h);
-    m.wIn = (m.diag * m.w) / hyp;
-    m.hIn = (m.diag * m.h) / hyp;
-    m.area = m.wIn * m.hIn;
-    m.ar = m.w / m.h;
-  });
-
-  visibleMonitors = new Set();
-  monitors.forEach((m, i) => {
-    if (!m.upcoming) visibleMonitors.add(i);
-  });
-
-  // Initialize enabled sets from defaults
-  ratioLines.forEach((rl, i) => {
-    if (rl.default) ratioEnabled.add(i);
-  });
-  mpCurves.forEach((mc, i) => {
-    if (mc.default) mpEnabled.add(i);
-  });
-  areaCurves.forEach((ac, i) => {
-    if (ac.default) areaEnabled.add(i);
-  });
-  ppiLines.forEach((pl, i) => {
-    if (pl.default) ppiEnabled.add(i);
-  });
-
-  // Build initial groups (after visibleMonitors is set)
-  groups = buildGroups();
+  readUrlState();
+  refreshPlotted();
+  updateAxisTitles();
 
   buildAxisControls();
   buildMonitorPanel();
   buildRefLinesPanel();
   buildLegend();
-  render();
+  createRefLines();
+  createDots();
+
+  measureLabelWidths();
+  applyPlottedDisplay();
+  relayout();
+
+  // Label widths change once the web fonts replace the fallback fonts.
+  document.fonts.ready.then(() => {
+    measureLabelWidths();
+    relayout();
+  });
 }
 
 init().catch(showLoadError);
 
+let resizeTimer = null;
 window.addEventListener("resize", () => {
-  if (window._resizeTimer) clearTimeout(window._resizeTimer);
-  window._resizeTimer = setTimeout(() => {
-    measureLabelMargin();
-    updateLabelMargin();
-    rebuildGroupsKeepingExpanded();
-    computeLayout();
-    drawGrid();
-    updateRatioLines();
-    updateMpCurves();
-    updateAreaCurves();
-    updatePpiLines();
-    avoidRefLabelOverlap();
-    positionDots();
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (monitors.length > 0) relayout();
   }, 150);
 });
+
+// writeUrlState uses replaceState, which does not fire hashchange, so this
+// only runs when the address bar or a link changes the hash.
+window.addEventListener("hashchange", () => location.reload());
