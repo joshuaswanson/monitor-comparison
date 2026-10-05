@@ -35,10 +35,6 @@ const AXES = {
   hz: { label: "Refresh Rate (Hz)", format: (v) => v.toFixed(0) },
 };
 
-function getVal(m, key) {
-  return m[key];
-}
-
 const chartArea = document.getElementById("chartArea");
 const chartContainer = document.getElementById("chart");
 const yLabelsCol = document.getElementById("yLabelsCol");
@@ -95,11 +91,11 @@ function computeLayout() {
   const vis = monitors.filter((_, i) => visibleMonitors.has(i));
   const src = vis.length > 0 ? vis : monitors;
   xRange = niceRange(
-    src.map((m) => getVal(m, xAxisKey)),
+    src.map((m) => m[xAxisKey]),
     0.15,
   );
   yRange = niceRange(
-    src.map((m) => getVal(m, yAxisKey)),
+    src.map((m) => m[yAxisKey]),
     0.15,
   );
   measureChart();
@@ -129,10 +125,10 @@ function positionDots() {
   Object.entries(groups).forEach(([key, group]) => {
     const indices = group.indices;
     const cx =
-      indices.reduce((s, i) => s + xPos(getVal(monitors[i], xAxisKey)), 0) /
+      indices.reduce((s, i) => s + xPos(monitors[i][xAxisKey]), 0) /
       indices.length;
     const cy =
-      indices.reduce((s, i) => s + yPos(getVal(monitors[i], yAxisKey)), 0) /
+      indices.reduce((s, i) => s + yPos(monitors[i][yAxisKey]), 0) /
       indices.length;
     groupCentroids[key] = { cx, cy };
   });
@@ -424,26 +420,14 @@ function positionDots() {
   });
 }
 
-const LEGEND_GROUPS = [
-  {
-    label: "Reference",
-    cats: ["macbook"],
-  },
-  { label: "Standard", cats: ["4k", "5k", "6k", "8k"] },
-  {
-    label: "Ultrawide",
-    cats: [
-      "ultrawide-6k",
-      "ultrawide-high",
-      "ultrawide-mid",
-      "ultrawide-low",
-      "ultrawide-entry",
-    ],
-  },
-  { label: "Super Ultrawide", cats: ["super-ultra"] },
-];
-
-const CATEGORY_ORDER = LEGEND_GROUPS.flatMap((g) => g.cats);
+function legendGroups() {
+  const catsByGroup = new Map();
+  Object.entries(categories).forEach(([key, cat]) => {
+    if (!catsByGroup.has(cat.group)) catsByGroup.set(cat.group, []);
+    catsByGroup.get(cat.group).push(key);
+  });
+  return [...catsByGroup].map(([label, cats]) => ({ label, cats }));
+}
 
 function sortedCategories() {
   const grouped = {};
@@ -451,16 +435,18 @@ function sortedCategories() {
     if (!grouped[m.cat]) grouped[m.cat] = { indices: [] };
     grouped[m.cat].indices.push(i);
   });
-  return CATEGORY_ORDER.filter((key) => grouped[key]).map((key) => ({
-    key,
-    indices: grouped[key].indices,
-  }));
+  return Object.keys(categories)
+    .filter((key) => grouped[key])
+    .map((key) => ({
+      key,
+      indices: grouped[key].indices,
+    }));
 }
 
 function buildLegend() {
   legendContainer.innerHTML = "";
   const present = new Set(monitors.map((m) => m.cat));
-  LEGEND_GROUPS.forEach((group) => {
+  legendGroups().forEach((group) => {
     const cats = group.cats.filter((c) => present.has(c));
     if (cats.length === 0) return;
     const section = document.createElement("div");
@@ -979,10 +965,26 @@ function unpinDot() {
   }
 }
 
+function makeKeyboardButton(el, ariaLabel) {
+  el.tabIndex = 0;
+  el.setAttribute("role", "button");
+  el.setAttribute("aria-label", ariaLabel);
+  el.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    el.click();
+  });
+}
+
 function createDots() {
   monitors.forEach((m, i) => {
     const dot = document.createElement("div");
-    dot.className = "dot cat-" + m.cat + (m.upcoming ? " upcoming" : "");
+    dot.className = "dot" + (m.upcoming ? " upcoming" : "");
+    dot.style.setProperty("--cat-color", categories[m.cat].color);
+    makeKeyboardButton(
+      dot,
+      `${m.name}${m.upcoming ? " (upcoming)" : ""}, ${m.w} x ${m.h}, ${m.diag} inch, ${m.hz} Hz, ${m.panel}`,
+    );
 
     let hoverTimer = null;
     dot.addEventListener("mouseenter", () => {
@@ -991,8 +993,14 @@ function createDots() {
     });
     dot.addEventListener("mouseleave", () => {
       clearTimeout(hoverTimer);
-      if (pinnedDotIndex === i) return;
+      if (pinnedDotIndex !== null) return;
       tooltip.style.display = "none";
+    });
+    dot.addEventListener("focus", () => {
+      if (pinnedDotIndex === null) showTooltipForDot(dot, m);
+    });
+    dot.addEventListener("blur", () => {
+      if (pinnedDotIndex === null) tooltip.style.display = "none";
     });
     dot.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1033,11 +1041,11 @@ function buildGroups() {
   const vis = monitors.filter((_, i) => visibleMonitors.has(i));
   const src = vis.length > 0 ? vis : monitors;
   const tX = niceRange(
-    src.map((m) => getVal(m, xAxisKey)),
+    src.map((m) => m[xAxisKey]),
     0.15,
   );
   const tY = niceRange(
-    src.map((m) => getVal(m, yAxisKey)),
+    src.map((m) => m[yAxisKey]),
     0.15,
   );
 
@@ -1053,8 +1061,8 @@ function buildGroups() {
   }
 
   const positions = monitors.map((m) => ({
-    x: tmpXPos(getVal(m, xAxisKey)),
-    y: tmpYPos(getVal(m, yAxisKey)),
+    x: tmpXPos(m[xAxisKey]),
+    y: tmpYPos(m[yAxisKey]),
   }));
 
   // Union-Find -- only cluster visible monitors
@@ -1109,10 +1117,10 @@ function getExpandedBounds(groupObj) {
   const indices = groupObj.indices.filter((mi) => visibleMonitors.has(mi));
   if (indices.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   const cx =
-    indices.reduce((s, i) => s + xPos(getVal(monitors[i], xAxisKey)), 0) /
+    indices.reduce((s, i) => s + xPos(monitors[i][xAxisKey]), 0) /
     indices.length;
   const cy =
-    indices.reduce((s, i) => s + yPos(getVal(monitors[i], yAxisKey)), 0) /
+    indices.reduce((s, i) => s + yPos(monitors[i][yAxisKey]), 0) /
     indices.length;
   const offsets = fanOffsets(indices.length);
   let minX = cx,
@@ -1145,6 +1153,10 @@ function createClusters() {
     const badge = document.createElement("div");
     badge.className = "cluster-badge";
     badge.textContent = "x" + group.indices.length;
+    makeKeyboardButton(
+      badge,
+      `${group.indices.length} overlapping monitors, toggle to spread them out`,
+    );
     badge.addEventListener("click", () => {
       // Add animation class before toggling
       group.indices.forEach((mi) => {
@@ -1490,7 +1502,12 @@ function updateVisibility() {
       totalChecked > 0 && totalChecked < monitors.length;
   }
 
-  // Rebuild groups preserving expanded state
+  rebuildGroupsKeepingExpanded();
+
+  rerender();
+}
+
+function rebuildGroupsKeepingExpanded() {
   const wasExpanded = new Set();
   Object.values(groups).forEach((group) => {
     if (group.expanded) group.indices.forEach((i) => wasExpanded.add(i));
@@ -1506,8 +1523,6 @@ function updateVisibility() {
     }
   });
   createClusters();
-
-  rerender();
 }
 
 // Axis controls
@@ -1595,11 +1610,11 @@ function rerender() {
     targetY = { min: yRange.min, max: yRange.max };
   } else {
     targetX = niceRange(
-      visMonitors.map((m) => getVal(m, xAxisKey)),
+      visMonitors.map((m) => m[xAxisKey]),
       0.15,
     );
     targetY = niceRange(
-      visMonitors.map((m) => getVal(m, yAxisKey)),
+      visMonitors.map((m) => m[yAxisKey]),
       0.15,
     );
   }
@@ -1727,9 +1742,34 @@ function render() {
   positionDots();
 }
 
-async function init() {
+async function loadData() {
   const response = await fetch("monitors.json");
+  if (!response.ok) {
+    throw new Error(`monitors.json returned HTTP ${response.status}.`);
+  }
   const data = await response.json();
+  data.monitors.forEach((m) => {
+    if (!data.categories[m.cat]) {
+      throw new Error(`"${m.name}" uses the unknown category "${m.cat}".`);
+    }
+  });
+  return data;
+}
+
+function showLoadError(err) {
+  console.error(err);
+  const message = document.createElement("div");
+  message.className = "chart-error";
+  message.textContent = "Could not load monitor data. " + err.message;
+  if (location.protocol === "file:") {
+    message.textContent +=
+      " Serve this folder over HTTP, for example with python3 -m http.server.";
+  }
+  chartArea.appendChild(message);
+}
+
+async function init() {
+  const data = await loadData();
 
   monitors = data.monitors;
   categories = data.categories;
@@ -1778,13 +1818,15 @@ async function init() {
   render();
 }
 
-init();
+init().catch(showLoadError);
 
 window.addEventListener("resize", () => {
   if (window._resizeTimer) clearTimeout(window._resizeTimer);
   window._resizeTimer = setTimeout(() => {
-    computeLayout();
     measureLabelMargin();
+    updateLabelMargin();
+    rebuildGroupsKeepingExpanded();
+    computeLayout();
     drawGrid();
     updateRatioLines();
     updateMpCurves();
