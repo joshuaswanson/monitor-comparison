@@ -37,6 +37,10 @@ Object.entries(data.categories).forEach(([key, cat]) => {
   check(isText(cat.label), `Category ${key} needs a label`);
   check(isText(cat.group), `Category ${key} needs a group`);
   check(HEX_COLOR.test(cat.color), `Category ${key} needs a hex color`);
+  check(
+    HEX_COLOR.test(cat.colorLight),
+    `Category ${key} needs a hex colorLight`,
+  );
 });
 
 data.monitors.forEach((m) => {
@@ -97,6 +101,7 @@ Object.entries(REFERENCE_FIELDS).forEach(([list, fields]) => {
     const where = `${list} entry "${entry.name}"`;
     check(isText(entry.name), `A ${list} entry is missing its name`);
     check(HEX_COLOR.test(entry.color), `${where} needs a hex color`);
+    check(HEX_COLOR.test(entry.colorLight), `${where} needs a hex colorLight`);
     check(typeof entry.default === "boolean", `${where} needs a default flag`);
     fields.forEach((field) => {
       check(isPositive(entry[field]), `${where} needs a positive ${field}`);

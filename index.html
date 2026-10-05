@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark light">
+<script>
+  // Runs before first paint so the page never flashes the wrong theme.
+  (function () {
+    var choice = localStorage.getItem("theme") || "system";
+    var dark =
+      choice === "dark" ||
+      (choice === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
 <title>Joshua's Monitor Comparison Tool</title>
 <meta name="description" content="Interactive chart comparing current monitors by resolution, pixel density, physical size, aspect ratio, and refresh rate.">
 <meta property="og:title" content="Joshua's Monitor Comparison Tool">
@@ -17,8 +28,14 @@
 </head>
 <body>
 
+<div class="theme-switch" id="themeSwitch" role="group" aria-label="Colour theme">
+  <button type="button" data-theme-choice="system">System</button>
+  <button type="button" data-theme-choice="light">Light</button>
+  <button type="button" data-theme-choice="dark">Dark</button>
+</div>
+
 <h1 class="logo" aria-label="Joshua's Monitor Comparison Tool">
-  <span aria-hidden="true"><span class="logo-owner">Joshua's</span> M<span class="logo-dot" style="--dot: #4593f2"></span>nit<span class="logo-dot" style="--dot: #2eaa7b"></span>r C<span class="logo-dot" style="--dot: #e66534"></span>mparis<span class="logo-dot" style="--dot: #c9c9d4"></span>n</span>
+  <span aria-hidden="true"><span class="logo-owner">Joshua's</span> M<span class="logo-dot" style="--dot: #4593f2"></span>nit<span class="logo-dot" style="--dot: #2eaa7b"></span>r C<span class="logo-dot" style="--dot: #e66534"></span>mparis<span class="logo-dot" style="--dot: var(--reference)"></span>n</span>
 </h1>
 
 <div class="axis-controls" id="axisControls"></div>

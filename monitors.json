@@ -547,43 +547,50 @@
       "name": "4:3",
       "r": 1.3333,
       "color": "#7788aa",
-      "default": false
+      "default": false,
+      "colorLight": "#4f638b"
     },
     {
       "name": "3:2",
       "r": 1.5,
       "color": "#88aa88",
-      "default": false
+      "default": false,
+      "colorLight": "#496e4a"
     },
     {
       "name": "16:10",
       "r": 1.6,
       "color": "#aaaa77",
-      "default": false
+      "default": false,
+      "colorLight": "#68672c"
     },
     {
       "name": "16:9",
       "r": 1.7778,
       "color": "#4593f2",
-      "default": true
+      "default": true,
+      "colorLight": "#0261bd"
     },
     {
       "name": "21:9",
       "r": 2.3333,
       "color": "#55ca9a",
-      "default": true
+      "default": true,
+      "colorLight": "#027652"
     },
     {
       "name": "32:10",
       "r": 3.2,
       "color": "#aa7788",
-      "default": false
+      "default": false,
+      "colorLight": "#875063"
     },
     {
       "name": "32:9",
       "r": 3.5556,
       "color": "#e66534",
-      "default": true
+      "default": true,
+      "colorLight": "#a83901"
     }
   ],
   "mpCurves": [
@@ -592,49 +599,56 @@
       "w": 1920,
       "h": 1080,
       "color": "#7a9a9a",
-      "default": false
+      "default": false,
+      "colorLight": "#296f70"
     },
     {
       "name": "~3.7 MP",
       "w": 2560,
       "h": 1440,
       "color": "#9a7a9a",
-      "default": false
+      "default": false,
+      "colorLight": "#785578"
     },
     {
       "name": "~8.3 MP",
       "w": 3840,
       "h": 2160,
       "color": "#9a9a7a",
-      "default": false
+      "default": false,
+      "colorLight": "#676636"
     },
     {
       "name": "~11.1 MP",
       "w": 5120,
       "h": 2160,
       "color": "#55ca9a",
-      "default": true
+      "default": true,
+      "colorLight": "#027652"
     },
     {
       "name": "~14.7 MP",
       "w": 5120,
       "h": 2880,
       "color": "#4593f2",
-      "default": true
+      "default": true,
+      "colorLight": "#0261bd"
     },
     {
       "name": "~20.4 MP",
       "w": 6016,
       "h": 3384,
       "color": "#7ab4fe",
-      "default": true
+      "default": true,
+      "colorLight": "#1f63b1"
     },
     {
       "name": "~33.2 MP",
       "w": 7680,
       "h": 4320,
       "color": "#b9d7fe",
-      "default": false
+      "default": false,
+      "colorLight": "#46658c"
     }
   ],
   "ppiLines": [
@@ -642,31 +656,36 @@
       "name": "100 PPI",
       "ppi": 100,
       "color": "#7a9a9a",
-      "default": false
+      "default": false,
+      "colorLight": "#296f70"
     },
     {
       "name": "125 PPI",
       "ppi": 125,
       "color": "#9a7a9a",
-      "default": true
+      "default": true,
+      "colorLight": "#785578"
     },
     {
       "name": "150 PPI",
       "ppi": 150,
       "color": "#9a9a7a",
-      "default": true
+      "default": true,
+      "colorLight": "#676636"
     },
     {
       "name": "200 PPI",
       "ppi": 200,
       "color": "#7ab4fe",
-      "default": true
+      "default": true,
+      "colorLight": "#1f63b1"
     },
     {
       "name": "250 PPI",
       "ppi": 250,
       "color": "#b9d7fe",
-      "default": false
+      "default": false,
+      "colorLight": "#46658c"
     }
   ],
   "areaCurves": [
@@ -674,31 +693,36 @@
       "name": "200 in²",
       "area": 200,
       "color": "#7a9a9a",
-      "default": false
+      "default": false,
+      "colorLight": "#296f70"
     },
     {
       "name": "400 in²",
       "area": 400,
       "color": "#9a7a9a",
-      "default": true
+      "default": true,
+      "colorLight": "#785578"
     },
     {
       "name": "500 in²",
       "area": 500,
       "color": "#9a9a7a",
-      "default": true
+      "default": true,
+      "colorLight": "#676636"
     },
     {
       "name": "600 in²",
       "area": 600,
       "color": "#55ca9a",
-      "default": true
+      "default": true,
+      "colorLight": "#027652"
     },
     {
       "name": "800 in²",
       "area": 800,
       "color": "#b9d7fe",
-      "default": false
+      "default": false,
+      "colorLight": "#46658c"
     }
   ],
   "categories": {
@@ -706,62 +730,74 @@
       "label": "Joshua's MacBook Pro (ref)",
       "group": "Reference",
       "color": "#c9c9d4",
+      "colorLight": "#6b6b78",
       "shape": "diamond"
     },
     "4k": {
       "label": "4K",
       "group": "Standard",
-      "color": "#0156a9"
+      "color": "#0156a9",
+      "colorLight": "#86b6ef"
     },
     "4.5k": {
       "label": "4.5K",
       "group": "Standard",
-      "color": "#2374d0"
+      "color": "#2374d0",
+      "colorLight": "#5598e7"
     },
     "5k": {
       "label": "5K",
       "group": "Standard",
-      "color": "#4593f2"
+      "color": "#4593f2",
+      "colorLight": "#2a78d6"
     },
     "6k": {
       "label": "6K",
       "group": "Standard",
-      "color": "#7ab4fe"
+      "color": "#7ab4fe",
+      "colorLight": "#1c5cab"
     },
     "8k": {
       "label": "8K",
       "group": "Standard",
-      "color": "#b9d7fe"
+      "color": "#b9d7fe",
+      "colorLight": "#104281"
     },
     "ultrawide-entry": {
       "label": "Ultrawide 2560x1080",
       "group": "Ultrawide",
-      "color": "#036948"
+      "color": "#036948",
+      "colorLight": "#4ec494"
     },
     "ultrawide-low": {
       "label": "Ultrawide 3440x1440",
       "group": "Ultrawide",
-      "color": "#028a60"
+      "color": "#028a60",
+      "colorLight": "#2aa779"
     },
     "ultrawide-mid": {
       "label": "Ultrawide 3840x1600",
       "group": "Ultrawide",
-      "color": "#2eaa7b"
+      "color": "#2eaa7b",
+      "colorLight": "#048a60"
     },
     "ultrawide-high": {
       "label": "Ultrawide 5K2K",
       "group": "Ultrawide",
-      "color": "#55ca9a"
+      "color": "#55ca9a",
+      "colorLight": "#056c4a"
     },
     "ultrawide-6k": {
       "label": "Ultrawide 6K",
       "group": "Ultrawide",
-      "color": "#7cefbc"
+      "color": "#7cefbc",
+      "colorLight": "#005036"
     },
     "super-ultra": {
       "label": "Super ultrawide 32:9",
       "group": "Super Ultrawide",
-      "color": "#e66534"
+      "color": "#e66534",
+      "colorLight": "#eb6834"
     }
   }
 }
