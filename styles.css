@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 112.5%;
+}
+
 body {
   background: #0f1117;
   color: #e0e0e6;
@@ -16,12 +20,30 @@ body {
   padding: 40px 20px;
 }
 
-h1 {
-  font-size: 1.6rem;
+.logo {
+  font-size: 2.1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
   color: #f0f0f5;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.logo-owner {
+  font-weight: 400;
+  color: #7a7a8e;
+}
+
+/* Each "o" in the title is drawn as a chart dot. */
+.logo-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin: 0 0.05em;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 0.45em color-mix(in srgb, var(--dot) 55%, transparent);
 }
 
 h1 + .axis-controls {
@@ -46,7 +68,7 @@ h1 + .axis-controls {
   gap: 6px;
 }
 
-.axis-control-group label {
+.axis-control-group span {
   font-size: 0.72rem;
   font-family: "JetBrains Mono", monospace;
   color: #7a7a8e;
@@ -202,7 +224,7 @@ h1 + .axis-controls {
 .dot:hover,
 .dot:focus-visible,
 .dot.pinned {
-  transform: translate(-50%, -50%) scale(1.8);
+  transform: translate(-50%, -50%) scale(1.25);
   z-index: 10;
 }
 
@@ -243,6 +265,24 @@ h1 + .axis-controls {
   text-align: center;
   font-size: 0.8rem;
   color: #f87171;
+}
+
+.diamond {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.dot.diamond {
+  width: 14px;
+  height: 14px;
+}
+
+.chart-note {
+  min-height: 1.2em;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  font-family: "JetBrains Mono", monospace;
+  color: #7a7a8e;
+  text-align: center;
 }
 
 /* Monitor labels */
@@ -326,6 +366,15 @@ h1 + .axis-controls {
   font-size: 0.68rem;
   color: #9a9aae;
   line-height: 1.7;
+}
+
+.tooltip.pinned {
+  pointer-events: auto;
+}
+.tooltip .tt-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #7ab4fe;
 }
 
 /* Legend */
@@ -587,8 +636,8 @@ h1 + .axis-controls {
     padding: 24px 10px;
   }
 
-  h1 {
-    font-size: 1.3rem;
+  .logo {
+    font-size: 1.45rem;
   }
 
   .axis-controls {
