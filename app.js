@@ -1430,10 +1430,6 @@ function showLoadError(err) {
   const message = document.createElement("div");
   message.className = "chart-error";
   message.textContent = "Could not load monitor data. " + err.message;
-  if (location.protocol === "file:") {
-    message.textContent +=
-      " Serve this folder over HTTP, for example with python3 -m http.server.";
-  }
   chartArea.appendChild(message);
 }
 
