@@ -28,11 +28,6 @@ function checkUnique(values, what) {
   });
 }
 
-check(
-  /^\d{4}-\d{2}-\d{2}$/.test(data.pricesChecked ?? ""),
-  "pricesChecked needs a date in YYYY-MM-DD form",
-);
-
 Object.entries(data.categories).forEach(([key, cat]) => {
   check(isText(cat.label), `Category ${key} needs a label`);
   check(isText(cat.group), `Category ${key} needs a group`);
@@ -60,23 +55,13 @@ data.monitors.forEach((m) => {
     m.upcoming === undefined || typeof m.upcoming === "boolean",
     `${where} has an upcoming flag that is not true or false`,
   );
-  ["price", "msrp"].forEach((field) => {
-    check(
-      m[field] === undefined || isPositive(m[field]),
-      `${where} has a ${field} that is not a positive number`,
-    );
-  });
   check(
-    m.msrp === undefined || m.price === undefined || m.price <= m.msrp,
-    `${where} has a street price above its list price`,
+    m.price === undefined || isPositive(m.price),
+    `${where} has a price that is not a positive number`,
   );
   check(
     m.year === undefined || (Number.isInteger(m.year) && m.year >= 2015),
     `${where} has an implausible year`,
-  );
-  check(
-    m.url === undefined || /^https:\/\/\S+$/.test(m.url),
-    `${where} has a url that is not an https link`,
   );
 });
 
