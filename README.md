@@ -2,7 +2,7 @@
   <img src="assets/logo.svg" alt="Joshua's Monitor Comparison" width="560">
 </h1>
 
-I was shopping for a monitor and wanted a nice, intuitive visual way to compare them. This interactive chart lets you plot monitors on any pair of axes (resolution, megapixels, PPI, aspect ratio, diagonal, physical width and height, screen area, refresh rate, price), toggle individual monitors or whole categories, and overlay reference lines for common aspect ratios, megapixel counts, screen areas, and pixel densities. The current view is stored in the URL, so a link reproduces it. The page has light and dark themes and follows the system setting by default.
+I was shopping for a monitor and wanted a nice, intuitive visual way to compare them. This interactive chart lets you plot monitors on any pair of axes (resolution, megapixels, PPI, aspect ratio, diagonal, physical width and height, screen area, refresh rate, price), toggle individual monitors or whole categories, filter by diagonal, pixel density, refresh rate, list price, and panel type, and overlay reference lines for common aspect ratios, megapixel counts, screen areas, and pixel densities. The current view is stored in the URL, so a link reproduces it. The page has light and dark themes and follows the system setting by default.
 
 Check it out here: https://joshuaswanson.github.io/monitor-comparison/
 
@@ -10,10 +10,8 @@ Check it out here: https://joshuaswanson.github.io/monitor-comparison/
 
 All monitors live in `monitors.json`. Optional fields per monitor:
 
-- `price`: current US street price in USD. This is the lowest price found at a major US retailer or the manufacturer's store on the date in `pricesChecked` at the top of the file. Update that date whenever prices are refreshed.
-- `msrp`: the manufacturer's US list price in USD.
+- `price`: the manufacturer's US list price in USD.
 - `year`: year of US release.
-- `url`: product page.
 - `upcoming`: `true` for announced monitors that are not yet on sale.
 
 Monitors without a price are left off the chart when the price axis is selected.

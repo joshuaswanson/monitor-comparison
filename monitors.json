@@ -1,5 +1,4 @@
 {
-  "pricesChecked": "2026-10-05",
   "monitors": [
     {
       "name": "MacBook Pro 16\" M1 Max",
@@ -32,10 +31,8 @@
       "panel": "Mini-LED",
       "cat": "5k",
       "shortName": "Studio Display XDR",
-      "price": 2899,
-      "year": 2026,
-      "url": "https://www.apple.com/studio-display-xdr/",
-      "msrp": 3299
+      "price": 3299,
+      "year": 2026
     },
     {
       "name": "ASUS ProArt PA27JCV 27\" 5K",
@@ -46,10 +43,8 @@
       "panel": "IPS",
       "cat": "5k",
       "shortName": "ASUS PA27JCV",
-      "price": 673,
-      "year": 2024,
-      "url": "https://www.bhphotovideo.com/c/product/1850479-REG/asus_pa27jcv_27_proart_5k_usb_c.html",
-      "msrp": 799
+      "price": 799,
+      "year": 2024
     },
     {
       "name": "LG UltraGear 27GM950B 27\" 5K",
@@ -60,10 +55,8 @@
       "panel": "Mini-LED IPS",
       "cat": "5k",
       "shortName": "LG 27GM950B",
-      "price": 800,
-      "year": 2026,
-      "url": "https://www.bhphotovideo.com/c/product/1951120-REG/lg_27gm950b_ultragear_evo_27_5k.html",
-      "msrp": 1200
+      "price": 1200,
+      "year": 2026
     },
     {
       "name": "Samsung Odyssey G8 G80HF 27\" 5K",
@@ -74,10 +67,8 @@
       "panel": "IPS",
       "cat": "5k",
       "shortName": "Odyssey G8 5K",
-      "price": 710,
-      "year": 2026,
-      "url": "https://www.samsung.com/us/monitors/gaming/27-inch-odyssey-g8-g80hf-5k-gaming-monitor-sku-ls27hg802efxza/",
-      "msrp": 950
+      "price": 950,
+      "year": 2026
     },
     {
       "name": "Acer ProDesigner PE320QX 32\" 6K",
@@ -89,8 +80,7 @@
       "cat": "6k",
       "shortName": "Acer PE320QX",
       "price": 1500,
-      "year": 2026,
-      "msrp": 1500
+      "year": 2026
     },
     {
       "name": "ASUS ProArt PA32QCV 32\" 6K",
@@ -101,9 +91,8 @@
       "panel": "IPS",
       "cat": "6k",
       "shortName": "ASUS PA32QCV",
-      "price": 1223,
-      "year": 2025,
-      "msrp": 1299
+      "price": 1299,
+      "year": 2025
     },
     {
       "name": "Samsung Odyssey G8 G80HS 32\" 6K",
@@ -114,10 +103,8 @@
       "panel": "IPS",
       "cat": "6k",
       "shortName": "Odyssey G8 6K",
-      "price": 1300,
-      "year": 2026,
-      "url": "https://www.samsung.com/us/monitors/gaming/32-inch-odyssey-g8-g80hs-6k-gaming-monitor-sku-ls32hg802esxza/",
-      "msrp": 1600
+      "price": 1600,
+      "year": 2026
     },
     {
       "name": "ASUS ProArt PA32KCX 32\" 8K",
@@ -129,9 +116,7 @@
       "cat": "8k",
       "shortName": "ASUS 8K",
       "price": 8799,
-      "year": 2025,
-      "url": "https://shop.asus.com/us/90lm08c0-b01kb0-proart-display-pa32kcx.html",
-      "msrp": 8799
+      "year": 2025
     },
     {
       "name": "Dell UltraSharp U2725QE 27\"",
@@ -142,10 +127,8 @@
       "panel": "IPS Black",
       "cat": "4k",
       "shortName": "Dell U2725QE",
-      "price": 629,
-      "year": 2025,
-      "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-27-4k-thunderbolt-hub-monitor-u2725qe/apd/210-bqhr/monitors-monitor-accessories",
-      "msrp": 700
+      "price": 700,
+      "year": 2025
     },
     {
       "name": "ASUS ROG Swift OLED PG27UCWM 27\"",
@@ -157,9 +140,7 @@
       "cat": "4k",
       "shortName": "PG27UCWM",
       "price": 1199,
-      "year": 2026,
-      "url": "https://rog.asus.com/us/monitors/27-to-31-5-inches/rog-swift-oled-pg27ucwm/",
-      "msrp": 1199
+      "year": 2026
     },
     {
       "name": "ASUS ROG Swift OLED PG32UCWM 32\"",
@@ -171,9 +152,7 @@
       "cat": "4k",
       "shortName": "PG32UCWM",
       "price": 1399,
-      "year": 2026,
-      "url": "https://rog.asus.com/us/monitors/27-to-31-5-inches/rog-swift-oled-pg32ucwm/",
-      "msrp": 1399
+      "year": 2026
     },
     {
       "name": "Dell UltraSharp U3226Q 32\" 4K QD-OLED",
@@ -184,10 +163,8 @@
       "panel": "QD-OLED",
       "cat": "4k",
       "shortName": "Dell U3226Q",
-      "price": 2350,
-      "year": 2026,
-      "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-32-4k-qd-oled-monitor-u3226q/apd/210-bvkd/monitors-monitor-accessories",
-      "msrp": 2600
+      "price": 2600,
+      "year": 2026
     },
     {
       "name": "Samsung Odyssey OLED G8 G80SH 32\" 4K",
@@ -199,9 +176,7 @@
       "cat": "4k",
       "shortName": "Odyssey G8 OLED",
       "price": 1300,
-      "year": 2026,
-      "url": "https://www.samsung.com/us/monitors/gaming/32-inch-odyssey-oled-g8-g80sh-4k-gaming-monitor-sku-ls32hg802snxza/",
-      "msrp": 1300
+      "year": 2026
     },
     {
       "name": "LG OLED42C6 42\"",
@@ -212,10 +187,8 @@
       "panel": "W-OLED",
       "cat": "4k",
       "shortName": "LG 42C6",
-      "price": 1300,
-      "year": 2026,
-      "url": "https://www.bestbuy.com/product/lg-42-class-c6-series-oled-evo-ai-4k-smart-webos-tv-2026/JJ8VPZZ7SW",
-      "msrp": 1399
+      "price": 1399,
+      "year": 2026
     },
     {
       "name": "Dell UltraSharp U4323QE 43\" 4K",
@@ -226,9 +199,7 @@
       "panel": "IPS",
       "cat": "4k",
       "shortName": "Dell U4323QE",
-      "price": 1100,
-      "url": "https://www.bhphotovideo.com/c/product/1751348-REG/dell_u4323qe_43_4k_60hz_ips.html",
-      "msrp": 1200
+      "price": 1200
     },
     {
       "name": "Samsung Odyssey Ark 55\"",
@@ -239,10 +210,8 @@
       "panel": "Mini-LED VA",
       "cat": "4k",
       "shortName": "Odyssey Ark 55\"",
-      "price": 2000,
-      "year": 2023,
-      "url": "https://www.samsung.com/us/monitors/gaming/55-inch-odyssey-ark-2nd-gen-4k-uhd-165hz-1ms-quantum-mini-led-curved-gaming-screen-sku-ls55cg970nnxgo/",
-      "msrp": 3000
+      "price": 3000,
+      "year": 2023
     },
     {
       "name": "Dell UltraSharp U5226KW 52\"",
@@ -253,10 +222,8 @@
       "panel": "IPS Black",
       "cat": "ultrawide-6k",
       "shortName": "Dell 52\" 6K",
-      "price": 2200,
-      "year": 2026,
-      "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-52-thunderbolt-hub-monitor-u5226kw/apd/210-bthw/monitors-monitor-accessories",
-      "msrp": 2900
+      "price": 2900,
+      "year": 2026
     },
     {
       "name": "Acer Nitro XV345CKR P 34\" 5K2K",
@@ -267,9 +234,8 @@
       "panel": "Mini-LED VA",
       "cat": "ultrawide-high",
       "shortName": "Acer XV345CKR",
-      "upcoming": true,
       "price": 900,
-      "msrp": 900
+      "upcoming": true
     },
     {
       "name": "LG 39GX950B 39\" 5K2K OLED",
@@ -280,10 +246,8 @@
       "panel": "Tandem W-OLED",
       "cat": "ultrawide-high",
       "shortName": "LG 39\" OLED",
-      "price": 1550,
-      "year": 2026,
-      "url": "https://www.bestbuy.com/product/lg-ultragear-evo-gx9-39-5k2k-oled-165hz-0-03ms-g-sync-freesync-premium-pro-gaming-monitor-with-displayhdr-true-500-black/JJ8VPZZYYH/sku/6670040",
-      "msrp": 1800
+      "price": 1800,
+      "year": 2026
     },
     {
       "name": "Alienware AW3926QW 39\" 5K2K OLED",
@@ -295,9 +259,7 @@
       "cat": "ultrawide-high",
       "shortName": "AW3926QW",
       "price": 1100,
-      "year": 2026,
-      "url": "https://www.dell.com/en-us/shop/alienware-39-5k-oled-gaming-monitor-aw3926qw/apd/210-bwyz/monitors-monitor-accessories",
-      "msrp": 1100
+      "year": 2026
     },
     {
       "name": "LG UltraFine 40WT95UF 40\" 5K2K",
@@ -308,10 +270,8 @@
       "panel": "IPS Black",
       "cat": "ultrawide-high",
       "shortName": "LG 40WT95UF",
-      "price": 1500,
-      "year": 2025,
-      "url": "https://solutions.lg.com/us/computer-monitors/lg-40wt95uf-w",
-      "msrp": 1800
+      "price": 1800,
+      "year": 2025
     },
     {
       "name": "Dell U4025QW 40\" 5K2K",
@@ -322,10 +282,8 @@
       "panel": "IPS Black",
       "cat": "ultrawide-high",
       "shortName": "Dell U4025QW",
-      "price": 1498,
-      "year": 2024,
-      "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-40-curved-thunderbolt-hub-monitor-u4025qw/apd/210-bmdp/monitors-monitor-accessories",
-      "msrp": 2400
+      "price": 2400,
+      "year": 2024
     },
     {
       "name": "LG 45GX950B 45\" 5K2K OLED",
@@ -337,9 +295,7 @@
       "cat": "ultrawide-high",
       "shortName": "LG 45\" OLED",
       "price": 2000,
-      "year": 2026,
-      "url": "https://www.lg.com/us/monitors/lg-45gx950b-b-gaming-monitor",
-      "msrp": 2000
+      "year": 2026
     },
     {
       "name": "LG 45GX990A 45\" 5K2K Bendable OLED",
@@ -360,10 +316,8 @@
       "panel": "VA",
       "cat": "ultrawide-high",
       "shortName": "LG 52\" 5K2K",
-      "price": 1300,
-      "year": 2026,
-      "url": "https://www.abt.com/LG-UltraGear-evo-52-Inch-Curved-Gaming-Monitor-5K2K-WUHD-240Hz-1ms-1000R-in-Black-52G930BB/p/241404.html",
-      "msrp": 2000
+      "price": 2000,
+      "year": 2026
     },
     {
       "name": "LG 38WR85QC 38\"",
@@ -374,9 +328,7 @@
       "panel": "Nano IPS",
       "cat": "ultrawide-mid",
       "shortName": "LG 38WR85QC",
-      "price": 1197,
-      "url": "https://www.lg.com/us/monitors/lg-38wr85qc-w-ultrawide-monitor",
-      "msrp": 1200
+      "price": 1200
     },
     {
       "name": "Dell U3425WE 34\" Thunderbolt",
@@ -387,10 +339,8 @@
       "panel": "IPS Black",
       "cat": "ultrawide-low",
       "shortName": "Dell U3425WE",
-      "price": 750,
-      "year": 2024,
-      "url": "https://www.bhphotovideo.com/c/product/1817112-REG/dell_u3425we_ultrasharp_34_wqhd_ips.html",
-      "msrp": 1050
+      "price": 1050,
+      "year": 2024
     },
     {
       "name": "Alienware AW3426DW 34\" QD-OLED",
@@ -402,9 +352,7 @@
       "cat": "ultrawide-low",
       "shortName": "AW3426DW",
       "price": 800,
-      "year": 2026,
-      "url": "https://www.dell.com/en-us/shop/alienware-34-280hz-qd-oled-gaming-monitor-aw3426dw/apd/210-bwfr/monitors-monitor-accessories",
-      "msrp": 800
+      "year": 2026
     },
     {
       "name": "Gigabyte MO34WQC2 34\"",
@@ -415,9 +363,7 @@
       "panel": "QD-OLED",
       "cat": "ultrawide-low",
       "shortName": "Gigabyte 34\"",
-      "price": 756,
-      "url": "https://www.microcenter.com/product/682369/gigabyte-mo34wqc2-34-wqhd-(3440-x-1440)-240hz-qd-oled-gaming-monitor",
-      "msrp": 1099
+      "price": 1099
     },
     {
       "name": "ASUS ROG Swift OLED PG34WCDN 34\"",
@@ -429,9 +375,7 @@
       "cat": "ultrawide-low",
       "shortName": "PG34WCDN",
       "price": 1299,
-      "year": 2026,
-      "url": "https://rog.asus.com/us/monitors/32-to-34-inches/rog-swift-oled-pg34wcdn/",
-      "msrp": 1299
+      "year": 2026
     },
     {
       "name": "MSI MPG 341CQR QD-OLED X36 34\"",
@@ -443,9 +387,7 @@
       "cat": "ultrawide-low",
       "shortName": "MSI 341CQR X36",
       "price": 900,
-      "year": 2026,
-      "url": "https://us-store.msi.com/MPG-341CQR-QD-OLED-X36",
-      "msrp": 900
+      "year": 2026
     },
     {
       "name": "LG 34WQ650-W 34\"",
@@ -456,9 +398,7 @@
       "panel": "IPS",
       "cat": "ultrawide-entry",
       "shortName": "LG 34\" 1080p",
-      "price": 300,
-      "url": "https://www.lg.com/us/monitors/lg-34wq650-w-ultrawide-monitor",
-      "msrp": 300
+      "price": 300
     },
     {
       "name": "INNOCN 44C1G 44\"",
@@ -469,9 +409,7 @@
       "panel": "IPS",
       "cat": "super-ultra",
       "shortName": "INNOCN 44C1G",
-      "price": 400,
-      "url": "https://innocn.com/en-us/products/innocn-44-ultrawide-computer-monitor-44c1g",
-      "msrp": 650
+      "price": 650
     },
     {
       "name": "Lenovo P49w-30 49\"",
@@ -482,10 +420,8 @@
       "panel": "IPS Black",
       "cat": "super-ultra",
       "shortName": "Lenovo 49\"",
-      "price": 1557,
-      "year": 2023,
-      "url": "https://www.cdw.com/product/lenovo-thinkvision-p49w-30-49-dual-qhd-monitor/7400152",
-      "msrp": 1699
+      "price": 1699,
+      "year": 2023
     },
     {
       "name": "Dell UltraSharp U4924DW 49\"",
@@ -496,10 +432,8 @@
       "panel": "IPS Black",
       "cat": "super-ultra",
       "shortName": "Dell U4924DW",
-      "price": 1300,
-      "year": 2023,
-      "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-49-curved-usb-c-hub-monitor-u4924dw/apd/210-bgtz/monitors-monitor-accessories",
-      "msrp": 1500
+      "price": 1500,
+      "year": 2023
     },
     {
       "name": "MSI MPG 491CQPX 49\" QD-OLED",
@@ -510,9 +444,7 @@
       "panel": "QD-OLED",
       "cat": "super-ultra",
       "shortName": "MSI 491CQPX",
-      "price": 1000,
-      "url": "https://us-store.msi.com/MPG-491CQPX-QD-OLED",
-      "msrp": 1100
+      "price": 1100
     },
     {
       "name": "Samsung Odyssey OLED G9 49\" (G93SD)",
@@ -523,9 +455,7 @@
       "panel": "QD-OLED",
       "cat": "super-ultra",
       "shortName": "OLED G9 G93SD",
-      "price": 1000,
-      "url": "https://www.bestbuy.com/product/samsung-49-odyssey-oled-g9-g93sd-dual-qhd-240hz-0-03ms-g-sync-compatible-curved-glare-free-gaming-monitor-silver/J3ZYG2Z8Y3",
-      "msrp": 1700
+      "price": 1700
     },
     {
       "name": "Samsung Odyssey Neo G9 57\"",
@@ -536,10 +466,8 @@
       "panel": "Mini-LED VA",
       "cat": "super-ultra",
       "shortName": "Neo G9 57\"",
-      "price": 2100,
-      "year": 2023,
-      "url": "https://www.samsung.com/us/monitors/gaming/57-inch-odyssey-neo-g9-dual-4k-uhd-quantum-mini-led-240hz-1ms-hdr-1000-curved-gaming-monitor-sku-ls57cg952nnxza/",
-      "msrp": 2500
+      "price": 2500,
+      "year": 2023
     }
   ],
   "ratioLines": [
