@@ -45,8 +45,6 @@ const chartContainer = document.getElementById("chart");
 const chartNote = document.getElementById("chartNote");
 const yLabelsCol = document.getElementById("yLabelsCol");
 const tooltip = document.getElementById("tooltip");
-const ttName = document.getElementById("ttName");
-const ttDetail = document.getElementById("ttDetail");
 const legendContainer = document.getElementById("legend");
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -746,56 +744,130 @@ function formatUsd(amount) {
   return "$" + amount.toLocaleString("en-US");
 }
 
-function tooltipRow(text) {
-  const row = document.createElement("div");
-  row.textContent = text;
+const TOOLTIP_ICONS = {
+  resolution: "M2 3h12v10H2zM2 8h12M8 3v10",
+  density: "M4 4h2v2H4zM10 4h2v2h-2zM4 10h2v2H4zM10 10h2v2h-2z",
+  aspect: "M2 6V3.5h3.5M10.5 3.5H14V6M14 10v2.5h-3.5M5.5 12.5H2V10",
+  diagonal: "M3 13 13 3M9 3h4v4M7 13H3V9",
+  size: "M2 4v8M14 4v8M4 8h8M6 6 4 8l2 2M10 6l2 2-2 2",
+  refresh: "M13 8a5 5 0 1 1-1.5-3.5M13 2.5v2.5h-2.5",
+  panel: "M8 2 2 5l6 3 6-3zM2 8l6 3 6-3M2 11l6 3 6-3",
+  hide: "M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4zM8 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM3 13 13 3",
+};
+
+function tooltipIcon(name) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("aria-hidden", "true");
+  svg.classList.add("tt-icon");
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", TOOLTIP_ICONS[name]);
+  svg.appendChild(path);
+  return svg;
+}
+
+function tooltipPart(tag, className, text) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function tooltipRow(icon, label, value, extra) {
+  const row = tooltipPart("div", "tt-row");
+  const valueEl = tooltipPart("span", "tt-value", value);
+  if (extra) valueEl.appendChild(tooltipPart("span", "tt-extra", extra));
+  row.append(tooltipIcon(icon), tooltipPart("span", "tt-label", label), valueEl);
   return row;
+}
+
+function hideMonitor(i) {
+  checkboxEls[i].checked = false;
+  updateVisibility();
+}
+
+function tooltipHeader(i) {
+  const m = monitors[i];
+  const cat = categories[m.cat];
+  const header = tooltipPart("div", "tt-header");
+  const shape = tooltipPart("div", "tt-shape");
+  setThemedColor(shape, cat);
+  shape.style.aspectRatio = String(m.ar);
+
+  const subtitle = [cat.label];
+  if (m.year != null) subtitle.push(m.year);
+  const titles = tooltipPart("div", "tt-titles");
+  const sub = tooltipPart("div", "tt-sub", subtitle.join(" · "));
+  if (m.upcoming) sub.appendChild(tooltipPart("span", "tt-badge", "Upcoming"));
+  titles.append(tooltipPart("div", "tt-name", m.name), sub);
+
+  const shapeBox = tooltipPart("div", "tt-shape-box");
+  shapeBox.appendChild(shape);
+
+  const hide = tooltipPart("button", "tt-hide", "Hide");
+  hide.type = "button";
+  hide.prepend(tooltipIcon("hide"));
+  hide.addEventListener("click", () => hideMonitor(i));
+
+  header.append(shapeBox, titles, hide);
+  return header;
+}
+
+function tooltipFooter(m) {
+  const footer = tooltipPart("div", "tt-footer");
+  if (m.price != null) {
+    const price = tooltipPart("div", "tt-price");
+    price.appendChild(tooltipPart("span", "tt-price-now", formatUsd(m.price)));
+    if (m.msrp != null && m.msrp > m.price) {
+      const percentOff = Math.round((1 - m.price / m.msrp) * 100);
+      price.appendChild(tooltipPart("s", "tt-price-list", formatUsd(m.msrp)));
+      if (percentOff > 0) {
+        price.appendChild(tooltipPart("span", "tt-price-off", `${percentOff}% off`));
+      }
+    }
+    footer.appendChild(price);
+  }
+  if (m.url) {
+    const link = tooltipPart("a", "tt-link", "Product page ↗");
+    link.href = m.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    footer.appendChild(link);
+  }
+  return footer;
 }
 
 function showTooltip(i) {
   const m = monitors[i];
-  const pinned = pinnedDotIndex === i;
   tooltip.style.display = "block";
-  tooltip.classList.toggle("pinned", pinned);
-  ttName.textContent = m.name + (m.upcoming ? " (upcoming)" : "");
 
-  const rows = [
-    `Size: ${m.wIn.toFixed(1)}" x ${m.hIn.toFixed(1)}"`,
-    `Diagonal: ${m.diag}"`,
-    `Area: ${m.area.toFixed(0)} in²`,
-    `Resolution: ${m.w} x ${m.h}`,
-    `Megapixels: ${m.mp.toFixed(1)} MP`,
-    `PPI: ${m.ppi.toFixed(0)}`,
-    `Aspect Ratio: ${m.ar.toFixed(2)}`,
-    `Refresh Rate: ${m.hz} Hz`,
-    `Panel: ${m.panel}`,
-  ];
-  if (m.price != null) {
-    const discounted = m.msrp != null && m.msrp > m.price;
-    rows.push(
-      `Street Price: ${formatUsd(m.price)}` +
-        (discounted ? ` (list ${formatUsd(m.msrp)})` : ""),
-    );
-  }
-  if (m.year != null) rows.push(`Released: ${m.year}`);
-  ttDetail.replaceChildren(...rows.map(tooltipRow));
+  const rows = tooltipPart("div", "tt-rows");
+  rows.append(
+    tooltipRow("resolution", "Resolution", `${m.w} × ${m.h}`, `${m.mp.toFixed(1)} MP`),
+    tooltipRow("density", "Density", `${m.ppi.toFixed(0)} PPI`),
+    tooltipRow("aspect", "Aspect ratio", `${m.ar.toFixed(2)}:1`),
+    tooltipRow("diagonal", "Diagonal", `${m.diag}"`),
+    tooltipRow(
+      "size",
+      "Size",
+      `${m.wIn.toFixed(1)}" × ${m.hIn.toFixed(1)}"`,
+      `${m.area.toFixed(0)} in²`,
+    ),
+    tooltipRow("refresh", "Refresh rate", `${m.hz} Hz`),
+    tooltipRow("panel", "Panel", m.panel),
+  );
 
-  if (m.url && pinned) {
-    const link = document.createElement("a");
-    link.className = "tt-link";
-    link.href = m.url;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "Product page";
-    ttDetail.appendChild(link);
-  }
+  const parts = [tooltipHeader(i), rows];
+  if (m.price != null || m.url) parts.push(tooltipFooter(m));
+  tooltip.replaceChildren(...parts);
 
   const db = dotEls[i].getBoundingClientRect();
   const width = tooltip.offsetWidth;
+  const height = tooltip.offsetHeight;
   let tx = db.right + 12,
     ty = db.top - 20;
   if (tx + width > window.innerWidth) tx = db.left - 12 - width;
-  if (ty < 10) ty = 10;
+  ty = Math.max(10, Math.min(ty, window.innerHeight - height - 10));
   tooltip.style.left = tx + "px";
   tooltip.style.top = ty + "px";
 }
@@ -804,7 +876,6 @@ function unpinDot() {
   if (pinnedDotIndex === null) return;
   dotEls[pinnedDotIndex].classList.remove("pinned");
   pinnedDotIndex = null;
-  tooltip.classList.remove("pinned");
   tooltip.style.display = "none";
 }
 
@@ -833,22 +904,6 @@ function createDots() {
       `${m.name}${m.upcoming ? " (upcoming)" : ""}, ${m.w} x ${m.h}, ${m.diag} inch, ${m.hz} Hz, ${m.panel}`,
     );
 
-    let hoverTimer = null;
-    dot.addEventListener("mouseenter", () => {
-      if (pinnedDotIndex !== null) return;
-      hoverTimer = setTimeout(() => showTooltip(i), 150);
-    });
-    dot.addEventListener("mouseleave", () => {
-      clearTimeout(hoverTimer);
-      if (pinnedDotIndex !== null) return;
-      tooltip.style.display = "none";
-    });
-    dot.addEventListener("focus", () => {
-      if (pinnedDotIndex === null) showTooltip(i);
-    });
-    dot.addEventListener("blur", () => {
-      if (pinnedDotIndex === null) tooltip.style.display = "none";
-    });
     dot.addEventListener("click", (e) => {
       e.stopPropagation();
       const wasPinned = pinnedDotIndex === i;
