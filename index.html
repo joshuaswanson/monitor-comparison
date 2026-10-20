@@ -27,31 +27,32 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314171c'/%3E%3Ccircle cx='4.2' cy='10.6' r='2' fill='%234593f2'/%3E%3Ccircle cx='8' cy='5.4' r='2' fill='%232eaa7b'/%3E%3Ccircle cx='11.8' cy='10.6' r='2' fill='%23e66534'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div class="theme-switch" id="themeSwitch" role="group" aria-label="Colour theme">
-  <button type="button" data-theme-choice="system">System</button>
-  <button type="button" data-theme-choice="light">Light</button>
-  <button type="button" data-theme-choice="dark">Dark</button>
-</div>
-
+<header class="masthead">
 <h1 class="logo" aria-label="Joshua's Monitor Comparison Tool">
   <span aria-hidden="true"><span class="logo-owner">Joshua's</span> M<span class="logo-dot" style="--dot: #4593f2; --i: 0"></span>nit<span class="logo-dot" style="--dot: #2eaa7b; --i: 1"></span>r C<span class="logo-dot" style="--dot: #e66534; --i: 2"></span>mparis<span class="logo-dot" style="--dot: var(--reference); --i: 3"></span>n</span>
 </h1>
+<div class="theme-switch" id="themeSwitch" role="group" aria-label="Colour theme">
+  <button type="button" data-theme-choice="system">Auto</button>
+  <button type="button" data-theme-choice="light">Light</button>
+  <button type="button" data-theme-choice="dark">Dark</button>
+</div>
+</header>
 
 <div class="axis-controls" id="axisControls"></div>
 
 <div class="outer-wrapper">
-  <div class="y-axis-title" id="yAxisTitle">PPI &#8594;</div>
+  <div class="y-axis-title" id="yAxisTitle">PPI</div>
   <div class="y-labels-col" id="yLabelsCol"></div>
   <div class="chart-and-x">
     <div class="chart-container" id="chart">
       <div class="chart-area" id="chartArea"></div>
     </div>
-    <div class="x-axis-title" id="xAxisTitle">Screen Area (in²) &#8594;</div>
+    <div class="x-axis-title" id="xAxisTitle">Screen area (in²)</div>
     <div class="chart-note" id="chartNote" role="status"></div>
   </div>
 </div>

@@ -13,7 +13,6 @@ const TOOLTIP_ICONS = {
   refresh: "M13 8a5 5 0 1 1-1.5-3.5M13 2.5v2.5h-2.5",
   panel: "M8 2 2 5l6 3 6-3zM2 8l6 3 6-3M2 11l6 3 6-3",
   price: "M2 2.5h5.5L14 9l-5 5-6.5-6.5zM5.2 5.2h.01",
-  hide: "M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4zM8 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM3 13 13 3",
 };
 
 function tooltipIcon(name) {
@@ -56,10 +55,10 @@ function tooltipHeader(i) {
   setThemedColor(shape, cat);
   shape.style.aspectRatio = String(m.ar);
 
-  const subtitle = [cat.label];
-  if (m.year != null) subtitle.push(m.year);
   const titles = tooltipPart("div", "tt-titles");
-  const sub = tooltipPart("div", "tt-sub", subtitle.join(" · "));
+  const sub = tooltipPart("div", "tt-sub");
+  sub.appendChild(tooltipPart("span", "", cat.label));
+  if (m.year != null) sub.appendChild(tooltipPart("span", "", String(m.year)));
   if (m.upcoming) sub.appendChild(tooltipPart("span", "tt-badge", "Upcoming"));
   titles.append(tooltipPart("div", "tt-name", m.name), sub);
 
@@ -68,7 +67,6 @@ function tooltipHeader(i) {
 
   const hide = tooltipPart("button", "tt-hide", "Hide");
   hide.type = "button";
-  hide.prepend(tooltipIcon("hide"));
   hide.addEventListener("click", () => onHideMonitor(i));
 
   header.append(shapeBox, titles, hide);
@@ -115,8 +113,8 @@ function showTooltip(i) {
     ty = db.top - 20;
   if (tx + width > window.innerWidth) tx = db.left - 12 - width;
   ty = Math.max(10, Math.min(ty, window.innerHeight - height - 10));
-  tooltip.style.left = tx + "px";
-  tooltip.style.top = ty + "px";
+  tooltip.style.left = tx + window.scrollX + "px";
+  tooltip.style.top = ty + window.scrollY + "px";
 }
 
 export function unpinDot() {

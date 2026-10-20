@@ -64,7 +64,7 @@ export function createClusters() {
 
     const badge = document.createElement("div");
     badge.className = "cluster-badge";
-    badge.textContent = "x" + group.indices.length;
+    badge.textContent = String(group.indices.length);
     makeKeyboardButton(
       badge,
       `${group.indices.length} overlapping monitors, toggle to spread them out`,
