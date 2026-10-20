@@ -32,8 +32,8 @@ function buildAxisControl(text, selectedKey) {
 
 export function buildAxisControls(onSwitch) {
   document.getElementById("axisControls").innerHTML = "";
-  const xSelect = buildAxisControl("X:", state.xAxisKey);
-  const ySelect = buildAxisControl("Y:", state.yAxisKey);
+  const xSelect = buildAxisControl("X", state.xAxisKey);
+  const ySelect = buildAxisControl("Y", state.yAxisKey);
   xSelect.addEventListener("change", () =>
     onSwitch(xSelect.value, state.yAxisKey),
   );
@@ -44,7 +44,7 @@ export function buildAxisControls(onSwitch) {
 
 export function updateAxisTitles() {
   document.getElementById("xAxisTitle").textContent =
-    AXES[state.xAxisKey].label + " →";
+    AXES[state.xAxisKey].label;
   document.getElementById("yAxisTitle").textContent =
-    AXES[state.yAxisKey].label + " →";
+    AXES[state.yAxisKey].label;
 }
