@@ -50,7 +50,7 @@ export function setThemedColor(el, entry) {
 
 export function categorySwatch(className, cat) {
   const swatch = document.createElement("div");
-  swatch.className = className + (cat.shape === "diamond" ? " diamond" : "");
+  swatch.className = className;
   setThemedColor(swatch, cat);
   swatch.style.background = "var(--c)";
   return swatch;

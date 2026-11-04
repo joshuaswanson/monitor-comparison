@@ -7,7 +7,7 @@
       "diag": 16.2,
       "hz": 120,
       "panel": "Mini-LED IPS",
-      "cat": "macbook",
+      "cat": "laptop",
       "shortName": "MacBook Pro 16\"",
       "year": 2021
     },
@@ -654,12 +654,11 @@
     }
   ],
   "categories": {
-    "macbook": {
-      "label": "Joshua's MacBook Pro (ref)",
-      "group": "Reference",
+    "laptop": {
+      "label": "MacBook Pro 16\"",
+      "group": "Laptop",
       "color": "#c9c9d4",
-      "colorLight": "#6b6b78",
-      "shape": "diamond"
+      "colorLight": "#6b6b78"
     },
     "4k": {
       "label": "4K",
@@ -723,7 +722,7 @@
     },
     "super-ultra": {
       "label": "Super ultrawide 32:9",
-      "group": "Super Ultrawide",
+      "group": "Super ultrawide",
       "color": "#e66534",
       "colorLight": "#eb6834"
     }
