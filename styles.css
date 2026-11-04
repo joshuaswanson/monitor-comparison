@@ -97,11 +97,6 @@ input {
   letter-spacing: -0.03em;
 }
 
-.logo-owner {
-  font-weight: 400;
-  color: var(--ink-2);
-}
-
 /* Each "o" in the title is drawn as a chart dot. */
 .logo-dot {
   display: inline-block;
@@ -357,14 +352,6 @@ input {
   background: transparent;
   border: 2px solid var(--c);
 }
-.diamond {
-  border-radius: 0;
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-}
-.dot.diamond {
-  width: 13px;
-  height: 13px;
-}
 
 .dot.fan-animate {
   transition:
@@ -508,10 +495,6 @@ input {
   padding-left: 16px;
   text-align: right;
   white-space: nowrap;
-}
-.tt-extra {
-  margin-left: 8px;
-  color: var(--ink-3);
 }
 
 /* Legend */

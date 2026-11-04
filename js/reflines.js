@@ -1,3 +1,4 @@
+import { AXES } from "./axes.js";
 import { chartArea, SVG_NS } from "./dom.js";
 import { xPos, yPos, measureChart } from "./scale.js";
 import { state, labelEls, labelWidths } from "./state.js";
@@ -37,7 +38,7 @@ const CURVED_STYLE = {
 export const REF_KINDS = [
   {
     id: "ratio",
-    heading: "Aspect Ratio",
+    heading: AXES.ar.name,
     source: "ratioLines",
     strokeWidth: "1.5",
     ...STRAIGHT_STYLE,
@@ -53,7 +54,7 @@ export const REF_KINDS = [
   },
   {
     id: "mp",
-    heading: "Megapixels",
+    heading: AXES.mp.name,
     source: "mpCurves",
     strokeWidth: "1.2",
     ...CURVED_STYLE,
@@ -71,7 +72,7 @@ export const REF_KINDS = [
   },
   {
     id: "area",
-    heading: "Screen Area",
+    heading: AXES.area.name,
     source: "areaCurves",
     strokeWidth: "1.2",
     ...CURVED_STYLE,
@@ -81,7 +82,7 @@ export const REF_KINDS = [
   },
   {
     id: "ppi",
-    heading: "PPI",
+    heading: AXES.ppi.name,
     source: "ppiLines",
     strokeWidth: "1",
     ...STRAIGHT_STYLE,

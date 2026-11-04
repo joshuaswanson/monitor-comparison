@@ -1,3 +1,4 @@
+import { AXES } from "./axes.js";
 import { chartArea, tooltip, SVG_NS } from "./dom.js";
 import { state, dotEls, labelEls } from "./state.js";
 import { setThemedColor, formatUsd, makeKeyboardButton } from "./util.js";
@@ -6,10 +7,12 @@ let pinnedDotIndex = null;
 
 const TOOLTIP_ICONS = {
   resolution: "M2 3h12v10H2zM2 8h12M8 3v10",
+  pixels: "M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z",
   density: "M4 4h2v2H4zM10 4h2v2h-2zM4 10h2v2H4zM10 10h2v2h-2z",
   aspect: "M2 6V3.5h3.5M10.5 3.5H14V6M14 10v2.5h-3.5M5.5 12.5H2V10",
   diagonal: "M3 13 13 3M9 3h4v4M7 13H3V9",
   size: "M2 4v8M14 4v8M4 8h8M6 6 4 8l2 2M10 6l2 2-2 2",
+  area: "M2.5 2.5h11v11h-11zM2.5 7.5l5-5M2.5 12.5l10-10M7.5 13.5l6-6",
   refresh: "M13 8a5 5 0 1 1-1.5-3.5M13 2.5v2.5h-2.5",
   panel: "M8 2 2 5l6 3 6-3zM2 8l6 3 6-3M2 11l6 3 6-3",
   price: "M2 2.5h5.5L14 9l-5 5-6.5-6.5zM5.2 5.2h.01",
@@ -33,14 +36,12 @@ function tooltipPart(tag, className, text) {
   return node;
 }
 
-function tooltipRow(icon, label, value, extra) {
+function tooltipRow(icon, label, value) {
   const row = tooltipPart("div", "tt-row");
-  const valueEl = tooltipPart("span", "tt-value", value);
-  if (extra) valueEl.appendChild(tooltipPart("span", "tt-extra", extra));
   row.append(
     tooltipIcon(icon),
     tooltipPart("span", "tt-label", label),
-    valueEl,
+    tooltipPart("span", "tt-value", value),
   );
   return row;
 }
@@ -79,26 +80,22 @@ function showTooltip(i) {
 
   const rows = tooltipPart("div", "tt-rows");
   rows.append(
-    tooltipRow(
-      "resolution",
-      "Resolution",
-      `${m.w} × ${m.h}`,
-      `${m.mp.toFixed(1)} MP`,
-    ),
-    tooltipRow("density", "Density", `${m.ppi.toFixed(0)} PPI`),
-    tooltipRow("aspect", "Aspect ratio", `${m.ar.toFixed(2)}:1`),
-    tooltipRow("diagonal", "Diagonal", `${m.diag}"`),
+    tooltipRow("resolution", "Resolution", `${m.w} × ${m.h} px`),
+    tooltipRow("pixels", AXES.mp.name, `${m.mp.toFixed(1)} MP`),
+    tooltipRow("density", AXES.ppi.name, `${m.ppi.toFixed(0)} PPI`),
+    tooltipRow("aspect", AXES.ar.name, `${m.ar.toFixed(2)}:1`),
+    tooltipRow("diagonal", AXES.diag.name, `${m.diag} in`),
     tooltipRow(
       "size",
-      "Size",
-      `${m.wIn.toFixed(1)}" × ${m.hIn.toFixed(1)}"`,
-      `${m.area.toFixed(0)} in²`,
+      "Width × height",
+      `${m.wIn.toFixed(1)} × ${m.hIn.toFixed(1)} in`,
     ),
-    tooltipRow("refresh", "Refresh rate", `${m.hz} Hz`),
+    tooltipRow("area", AXES.area.name, `${m.area.toFixed(0)} in²`),
+    tooltipRow("refresh", AXES.hz.name, `${m.hz} Hz`),
     tooltipRow("panel", "Panel", m.panel),
   );
   if (m.price != null) {
-    rows.append(tooltipRow("price", "List price", formatUsd(m.price)));
+    rows.append(tooltipRow("price", AXES.price.name, formatUsd(m.price)));
   }
 
   tooltip.replaceChildren(tooltipHeader(i), rows);
@@ -130,10 +127,7 @@ export function createDots(onHide) {
   state.monitors.forEach((m, i) => {
     const cat = state.categories[m.cat];
     const dot = document.createElement("div");
-    dot.className =
-      "dot" +
-      (m.upcoming ? " upcoming" : "") +
-      (cat.shape === "diamond" ? " diamond" : "");
+    dot.className = "dot" + (m.upcoming ? " upcoming" : "");
     setThemedColor(dot, cat);
     makeKeyboardButton(
       dot,

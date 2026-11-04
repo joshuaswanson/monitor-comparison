@@ -14,9 +14,9 @@
     document.documentElement.dataset.theme = dark ? "dark" : "light";
   })();
 </script>
-<title>Joshua's Monitor Comparison Tool</title>
+<title>Monitor Comparison Tool</title>
 <meta name="description" content="Interactive chart comparing current monitors by resolution, pixel density, physical size, aspect ratio, and refresh rate.">
-<meta property="og:title" content="Joshua's Monitor Comparison Tool">
+<meta property="og:title" content="Monitor Comparison Tool">
 <meta property="og:description" content="Interactive chart comparing current monitors by resolution, pixel density, physical size, aspect ratio, and refresh rate.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://joshuaswanson.github.io/monitor-comparison/">
@@ -33,8 +33,8 @@
 <body>
 
 <header class="masthead">
-<h1 class="logo" aria-label="Joshua's Monitor Comparison Tool">
-  <span aria-hidden="true"><span class="logo-owner">Joshua's</span> M<span class="logo-dot" style="--dot: #4593f2; --i: 0"></span>nit<span class="logo-dot" style="--dot: #2eaa7b; --i: 1"></span>r C<span class="logo-dot" style="--dot: #e66534; --i: 2"></span>mparis<span class="logo-dot" style="--dot: var(--reference); --i: 3"></span>n</span>
+<h1 class="logo" aria-label="Monitor Comparison Tool">
+  <span aria-hidden="true">M<span class="logo-dot" style="--dot: #4593f2; --i: 0"></span>nit<span class="logo-dot" style="--dot: #2eaa7b; --i: 1"></span>r C<span class="logo-dot" style="--dot: #e66534; --i: 2"></span>mparis<span class="logo-dot" style="--dot: var(--reference); --i: 3"></span>n</span>
 </h1>
 <div class="theme-switch" id="themeSwitch" role="group" aria-label="Colour theme">
   <button type="button" data-theme-choice="system">Auto</button>
@@ -97,31 +97,31 @@
     </summary>
     <div class="section-body glossary">
   <dl>
-    <dt>Diagonal Size</dt>
+    <dt>Diagonal (in)</dt>
     <dd>The screen size measured corner to corner in inches. Note that diagonal size alone doesn't determine how big a monitor looks. A 49" ultrawide (32:9) has less total screen area than a 42" standard (16:9) display because the ultra-wide shape is much narrower vertically.</dd>
 
-    <dt>Screen Area</dt>
+    <dt>Screen area (in²)</dt>
     <dd>The actual viewable surface area in square inches, calculated from the physical width and height. This is a better indicator of overall screen "bigness" than diagonal size, especially when comparing monitors with different aspect ratios.</dd>
 
-    <dt>Resolution</dt>
+    <dt>Resolution (px)</dt>
     <dd>The number of horizontal and vertical pixels a display can show, e.g. 3840 x 2160. Higher resolution means more detail and screen real estate.</dd>
 
-    <dt>Megapixels (MP)</dt>
-    <dd>Total number of pixels on the display (width x height), expressed in millions. A 4K display (3840 x 2160) has about 8.3 megapixels. Monitors with the same megapixel count sit on the same hyperbola curve in the chart.</dd>
+    <dt>Total pixels (MP)</dt>
+    <dd>The number of pixels on the display (width x height) in millions, or megapixels (MP). A 4K display (3840 x 2160) has about 8.3 MP. Monitors with the same total pixels sit on the same curve in the chart.</dd>
 
-    <dt>PPI (Pixels Per Inch)</dt>
-    <dd>A measure of pixel density, meaning how tightly packed the pixels are on the screen. Higher PPI means sharper text and images. A 27" 4K display has ~163 PPI, while a 27" 5K display has ~218 PPI. At typical desk distance, around 110&ndash;140 PPI looks good at native scaling, while 200+ PPI enables crisp HiDPI/Retina rendering at 2x.</dd>
+    <dt>Pixel density (PPI)</dt>
+    <dd>How tightly packed the pixels are, in pixels per inch (PPI). Higher PPI means sharper text and images. A 27" 4K display has ~163 PPI, while a 27" 5K display has ~218 PPI. At typical desk distance, around 110&ndash;140 PPI looks good at native scaling, while 200+ PPI enables crisp HiDPI/Retina rendering at 2x.</dd>
 
-    <dt>Aspect Ratio</dt>
+    <dt>Aspect ratio</dt>
     <dd>The proportional relationship between width and height. Standard widescreen is 16:9 (1.78), ultrawide is 21:9 (~2.33), and super ultrawide is 32:9 (~3.56). Wider ratios give more horizontal workspace but less vertical space for a given diagonal size.</dd>
 
-    <dt>Refresh Rate (Hz)</dt>
+    <dt>Refresh rate (Hz)</dt>
     <dd>How many times per second the display updates the image. 60 Hz is standard for office work, 120&ndash;144 Hz gives noticeably smoother motion for scrolling and video, and 240 Hz is aimed at competitive gaming. Higher refresh rates require more GPU bandwidth.</dd>
 
-    <dt>Price</dt>
+    <dt>List price (USD)</dt>
     <dd>The manufacturer's US list price in dollars. Stores often sell below the list price, so treat it as an upper bound.</dd>
 
-    <dt>Panel Type</dt>
+    <dt>Panel</dt>
     <dd>The underlying display technology:
       <ul>
         <li><strong>IPS (In-Plane Switching)</strong>: Wide viewing angles and accurate color. Variants include <strong>Nano IPS</strong> (wider color gamut), <strong>IPS Black</strong> (2x better contrast than standard IPS), and <strong>PLS (Plane-to-Line Switching)</strong>, Samsung's IPS equivalent.</li>

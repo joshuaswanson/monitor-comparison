@@ -1,9 +1,10 @@
-export const NUMERIC_FILTERS = [
-  { key: "diag", label: "Diagonal", unit: "in" },
-  { key: "ppi", label: "Density", unit: "PPI" },
-  { key: "hz", label: "Refresh rate", unit: "Hz" },
-  { key: "price", label: "List price", unit: "USD" },
-];
+import { AXES } from "./axes.js";
+
+export const NUMERIC_FILTERS = ["diag", "ppi", "hz", "price"].map((key) => ({
+  key,
+  label: AXES[key].name,
+  unit: AXES[key].unit,
+}));
 
 export const PANEL_FAMILIES = ["IPS", "VA", "OLED", "Mini-LED"];
 
